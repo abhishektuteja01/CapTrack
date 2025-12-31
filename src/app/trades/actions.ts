@@ -1,6 +1,7 @@
 // src/app/trades/actions.ts
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { tradeSchema } from '@/lib/validators/trade';
 import { supabaseServer } from '@/lib/db/supabase/server';
 
@@ -32,6 +33,7 @@ export async function createTradeAction(
   const portfolioId = toStringVal(formData.get('portfolioId'));
   const occurredAtLocal = toStringVal(formData.get('occurredAt')); // datetime-local
   const occurredAtIso = occurredAtLocal ? new Date(occurredAtLocal).toISOString() : undefined;
+  const tradeId = toStringVal(formData.get('tradeId'));
 
   const raw = {
     portfolioId,
@@ -65,7 +67,7 @@ export async function createTradeAction(
   const trade = parsed.data;
   const supabase = await supabaseServer();
 
-  const { error } = await supabase.from('trades').insert({
+  const payload = {
     portfolio_id: trade.portfolioId,
     occurred_at: trade.occurredAt,
 
@@ -83,11 +85,36 @@ export async function createTradeAction(
 
     source: trade.source,
     notes: trade.notes ?? null,
-  });
+  };
+
+  const { error } = tradeId
+    ? await supabase
+        .from('trades')
+        .update(payload)
+        .eq('id', tradeId)
+        .eq('portfolio_id', trade.portfolioId)
+    : await supabase.from('trades').insert(payload);
 
   if (error) {
     return { ok: false, message: `DB error: ${error.message}` };
   }
 
-  return { ok: true, message: 'Trade added.' };
+  revalidatePath('/trades');
+  return { ok: true, message: tradeId ? 'Trade updated.' : 'Trade added.' };
+}
+
+export async function deleteTradeAction(formData: FormData): Promise<void> {
+  const tradeId = toStringVal(formData.get('tradeId'));
+  const portfolioId = toStringVal(formData.get('portfolioId'));
+
+  if (!tradeId || !portfolioId) return;
+
+  const supabase = await supabaseServer();
+  await supabase
+    .from('trades')
+    .delete()
+    .eq('id', tradeId)
+    .eq('portfolio_id', portfolioId);
+
+  revalidatePath('/trades');
 }

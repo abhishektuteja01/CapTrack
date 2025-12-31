@@ -3,9 +3,22 @@
 
 import React from 'react';
 import { createTradeAction } from './actions';
+import SymbolAutocomplete, { SymbolSuggestion } from './symbol-autocomplete';
 
 type Props = {
   portfolioId: string;
+  editTrade?: {
+    id: string;
+    occurredAtLocal: string;
+    symbol: string;
+    assetType: string;
+    side: 'BUY' | 'SELL';
+    quantity: number;
+    price: number;
+    fees: number;
+    currency: string;
+    notes: string | null;
+  };
 };
 
 type ActionState =
@@ -13,30 +26,62 @@ type ActionState =
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
   | undefined;
 
-export default function TradeForm({ portfolioId }: Props) {
+export default function TradeForm({ portfolioId, editTrade }: Props) {
   const [state, formAction] = React.useActionState<ActionState, FormData>(createTradeAction, undefined);
+
+  const [symbol, setSymbol] = React.useState(editTrade?.symbol ?? '');
+  const [assetType, setAssetType] = React.useState(editTrade?.assetType ?? 'stock');
+  const [currency, setCurrency] = React.useState(editTrade?.currency ?? 'USD');
 
   const fieldErr = (name: string) => state && 'fieldErrors' in state ? state.fieldErrors?.[name] : undefined;
 
   return (
     <form action={formAction} style={{ display: 'grid', gap: 12 }}>
       <input type="hidden" name="portfolioId" value={portfolioId} />
+      {editTrade?.id ? <input type="hidden" name="tradeId" value={editTrade.id} /> : null}
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Occurred At</label>
-        <input name="occurredAt" type="datetime-local" required />
+        <label className="text-sm font-semibold text-zinc-900">Occurred At</label>
+        <input
+          name="occurredAt"
+          type="datetime-local"
+          required
+          defaultValue={editTrade?.occurredAtLocal}
+          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+        />
         {fieldErr('occurredAt')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Symbol</label>
-        <input name="symbol" placeholder="AAPL / BTC" required />
+        <label className="text-sm font-semibold text-zinc-900">Symbol</label>
+        <SymbolAutocomplete
+          value={symbol}
+          onSelect={(s: SymbolSuggestion) => {
+            setSymbol(s.symbol);
+            setAssetType(s.type);
+            // Infer currency (v1 rules)
+            if (s.type === 'crypto') {
+              setCurrency('USD');
+            } else if (s.symbol.endsWith('.NS')) {
+              setCurrency('INR');
+            } else {
+              setCurrency('USD');
+            }
+          }}
+        />
+        <input type="hidden" name="symbol" value={symbol} />
         {fieldErr('asset')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Asset Type</label>
-        <select name="assetType" defaultValue="stock" required>
+        <label className="text-sm font-semibold text-zinc-900">Asset Type</label>
+        <select
+          name="assetType"
+          value={assetType}
+          onChange={(e) => setAssetType(e.target.value)}
+          required
+          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+        >
           <option value="stock">stock</option>
           <option value="etf">etf</option>
           <option value="mutual_fund">mutual_fund</option>
@@ -46,44 +91,89 @@ export default function TradeForm({ portfolioId }: Props) {
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Side</label>
-        <select name="side" defaultValue="BUY" required>
+        <label className="text-sm font-semibold text-zinc-900">Side</label>
+        <select name="side" defaultValue={editTrade?.side ?? 'BUY'} required className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none">
           <option value="BUY">BUY</option>
           <option value="SELL">SELL</option>
         </select>
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Quantity</label>
-        <input name="quantity" type="number" step="any" min="0" required />
+        <label className="text-sm font-semibold text-zinc-900">Quantity</label>
+        <input
+          name="quantity"
+          type="number"
+          step="any"
+          min="0"
+          required
+          defaultValue={editTrade?.quantity}
+          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+        />
         {fieldErr('quantity')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Price (per unit)</label>
-        <input name="price" type="number" step="any" min="0" required />
+        <label className="text-sm font-semibold text-zinc-900">Price (per unit)</label>
+        <input
+          name="price"
+          type="number"
+          step="any"
+          min="0"
+          required
+          defaultValue={editTrade?.price}
+          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+        />
         {fieldErr('price')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Fees</label>
-        <input name="fees" type="number" step="any" min="0" defaultValue={0} />
+        <label className="text-sm font-semibold text-zinc-900">Fees</label>
+        <input
+          name="fees"
+          type="number"
+          step="any"
+          min="0"
+          defaultValue={editTrade?.fees ?? 0}
+          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+        />
         {fieldErr('fees')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Currency</label>
-        <input name="currency" defaultValue="USD" maxLength={3} />
+        <label className="text-sm font-semibold text-zinc-900">Currency</label>
+        <small className="text-xs text-zinc-500">Auto-filled from symbol (locked)</small>
+        {/* Disabled display input (not submitted) */}
+        <input
+          value={currency}
+          readOnly
+          aria-readonly="true"
+          className="w-full cursor-not-allowed rounded-md border-2 border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"
+        />
+        {/* Hidden input to ensure server action receives currency */}
+        <input type="hidden" name="currency" value={currency} />
+        <small className="text-xs text-zinc-500">To change currency, select a different ticker symbol.</small>
         {fieldErr('currency')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
-        <label>Notes</label>
-        <textarea name="notes" rows={3} />
+        <label className="text-sm font-semibold text-zinc-900">Notes</label>
+        <textarea name="notes" rows={3} defaultValue={editTrade?.notes ?? ''} className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none" />
       </div>
 
-      <button type="submit" style={{ padding: 10, fontWeight: 600 }}>
-        Add Trade
+      {editTrade ? (
+        <a
+          href="/trades"
+          className="text-sm font-semibold text-zinc-700 underline"
+        >
+          Cancel editing
+        </a>
+      ) : null}
+
+      <button
+        type="submit"
+        className="mt-2 inline-flex items-center justify-center rounded-md border-2 border-zinc-900 bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+      >
+        {editTrade ? 'Save Changes' : 'Add Trade'}
       </button>
 
       {state?.message ? (
