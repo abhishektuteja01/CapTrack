@@ -50,8 +50,11 @@ export default async function DashboardPage() {
 
   const fmtMoney = (n: number, ccy?: string) => {
     if (!Number.isFinite(n)) return '—';
-    const num = Math.abs(n) >= 1 ? n.toFixed(2) : n.toFixed(6);
-    return ccy ? `${num} ${ccy}` : num;
+    const abs = Math.abs(n);
+    const formatted = abs >= 1
+      ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : n.toLocaleString(undefined, { maximumFractionDigits: 6 });
+    return ccy ? `${formatted} ${ccy}` : formatted;
   };
 
   const fmtQty = (n: number) => {
@@ -116,133 +119,143 @@ export default async function DashboardPage() {
 
   const totalsPct = totals.costBasis !== 0 ? totals.unrealized / totals.costBasis : 0;
 
-  return (
-    <div className="space-y-6">
-      <section className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-zinc-600">
-          Positions derived from trades in{' '}
-          <span className="font-medium text-zinc-900">{portfolio.name}</span>.
-        </p>
-      </section>
+  const pnlClass = (n?: number) => {
+    if (typeof n !== 'number' || !Number.isFinite(n) || n === 0) return 'text-zinc-900';
+    return n > 0 ? 'text-emerald-600' : 'text-rose-600';
+  };
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4">
-        <div className="mb-3 flex items-end justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-zinc-900">Positions</h2>
-            <form action={refreshDashboard}>
-              <button
-                type="submit"
-                aria-label="Refresh prices"
-                title="Refresh prices"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-sm text-zinc-900 hover:bg-zinc-100"
-              >
-                ⟳
-              </button>
-            </form>
-          </div>
-          <span className="text-xs text-zinc-500">{enriched.length} assets</span>
+  const pnlBgClass = (n?: number) => {
+    if (typeof n !== 'number' || !Number.isFinite(n) || n === 0) return 'bg-zinc-100 text-zinc-700';
+    return n > 0 ? 'bg-emerald-600/15 text-emerald-700' : 'bg-rose-600/15 text-rose-700';
+  };
+
+  const primaryCurrency = enriched.find((p) => p.liveCurrency)?.liveCurrency ?? enriched.find((p) => p.currency)?.currency;
+
+  return (
+    <div className="space-y-4">
+      <section className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Dashboard</h1>
+          <p className="text-xs text-zinc-500">
+            {portfolio.name} • {enriched.length} assets
+          </p>
         </div>
 
-        {enriched.length === 0 ? (
-          <p className="text-sm text-zinc-600">
-            No positions yet. Add trades to get started.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-zinc-200">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-xs text-zinc-600">
-                <tr>
-                  <th className="px-3 py-2 text-left font-semibold">Asset</th>
-                  <th className="px-3 py-2 text-right font-semibold">Quantity</th>
-                  <th className="px-3 py-2 text-right font-semibold">Avg cost</th>
-                  <th className="px-3 py-2 text-right font-semibold">Cost basis</th>
-                  <th className="px-3 py-2 text-right font-semibold">Price</th>
-                  <th className="px-3 py-2 text-right font-semibold">Market value</th>
-                  <th className="px-3 py-2 text-right font-semibold">Unrealized P/L</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enriched.map((p) => (
-                  <tr
-                    key={`${p.asset.type}:${p.asset.symbol}`}
-                    className="border-t border-zinc-200"
-                  >
-                    <td className="px-3 py-2">
-                      <div className="font-medium text-zinc-900">{p.asset.symbol}</div>
-                      <div className="text-xs text-zinc-600">
-                        {p.displayName ?? p.asset.type}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {fmtQty(p.quantity)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {fmtMoney(p.avgCost, p.liveCurrency ?? p.currency)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {fmtMoney(p.costBasis, p.liveCurrency ?? p.currency)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {typeof p.livePrice === 'number'
-                        ? fmtMoney(p.livePrice, p.liveCurrency)
-                        : '—'}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {typeof p.marketValue === 'number'
-                        ? fmtMoney(p.marketValue, p.liveCurrency)
-                        : '—'}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {typeof p.unrealized === 'number' ? (
-                        <span
-                          className={
-                            p.unrealized >= 0 ? 'text-zinc-900' : 'text-zinc-700'
-                          }
-                        >
-                          {fmtMoney(p.unrealized, p.liveCurrency)}
-                          {typeof p.unrealizedPct === 'number' ? (
-                            <span className="ml-1 text-xs text-zinc-500">
-                              ({(p.unrealizedPct * 100).toFixed(2)}%)
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))}
+        <form action={refreshDashboard}>
+          <button
+            type="submit"
+            aria-label="Refresh prices"
+            title="Refresh prices"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-sm text-zinc-900 hover:bg-zinc-100"
+          >
+            ⟳
+          </button>
+        </form>
+      </section>
 
-                <tr className="border-t border-zinc-200 bg-zinc-50">
-                  <td className="px-3 py-2 font-semibold text-zinc-900" colSpan={3}>
-                    Totals
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-semibold">
-                    {fmtMoney(totals.costBasis)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-zinc-500">—</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-semibold">
-                    {fmtMoney(totals.marketValue)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-semibold">
-                    {fmtMoney(totals.unrealized)}
-                    <span className="ml-1 text-xs text-zinc-500">
-                      ({(totalsPct * 100).toFixed(2)}%)
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      {/* Summary block */}
+      <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <div className="text-xs text-zinc-500">Invested</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
+              {fmtMoney(totals.costBasis, primaryCurrency)}
+            </div>
           </div>
+          <div className="text-right">
+            <div className="text-xs text-zinc-500">Current</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
+              {fmtMoney(totals.marketValue, primaryCurrency)}
+            </div>
+          </div>
+        </div>
+
+        <div className="my-4 h-px w-full bg-zinc-200" />
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-medium text-zinc-500">P&amp;L</div>
+          <div className="flex items-center gap-2">
+            <div className={`text-2xl font-semibold tabular-nums ${pnlClass(totals.unrealized)}`}>
+              {totals.unrealized >= 0 ? '+' : ''}
+              {fmtMoney(totals.unrealized, primaryCurrency)}
+            </div>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold tabular-nums ${pnlBgClass(totals.unrealized)}`}>
+              {(totalsPct * 100).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Positions list */}
+      <section className="rounded-2xl border border-zinc-200 bg-white">
+        {enriched.length === 0 ? (
+          <div className="p-4 text-sm text-zinc-600">No positions yet. Add trades to get started.</div>
+        ) : (
+          <ul className="divide-y divide-zinc-200">
+            {enriched.map((p) => {
+              const ltpPct = typeof p.avgCost === 'number' && p.avgCost !== 0 && typeof p.livePrice === 'number'
+                ? (p.livePrice - p.avgCost) / p.avgCost
+                : undefined;
+
+              return (
+                <li key={`${p.asset.type}:${p.asset.symbol}`} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left side */}
+                    <div className="min-w-0">
+                      <div className="text-xs text-zinc-500">
+                        Qty. {fmtQty(p.quantity)} • Avg. {fmtMoney(p.avgCost, p.liveCurrency ?? p.currency)}
+                      </div>
+                      <div className="mt-1 truncate text-lg font-bold tracking-tight text-zinc-900">
+                        {p.asset.symbol}
+                      </div>
+                      <div className="mt-1 text-xs text-zinc-500">
+                        Invested {fmtMoney(p.costBasis, p.liveCurrency ?? p.currency)}
+                      </div>
+                    </div>
+
+                    {/* Right side */}
+                    <div className="shrink-0 text-right">
+                      <div className={`text-xs font-semibold tabular-nums ${pnlClass(p.unrealized)}`}>
+                        {typeof p.unrealizedPct === 'number' ? `${(p.unrealizedPct * 100).toFixed(2)}%` : '—'}
+                      </div>
+                      <div className={`mt-1 text-lg font-bold tabular-nums ${pnlClass(p.unrealized)}`}>
+                        {typeof p.unrealized === 'number' ? (
+                          <>
+                            {p.unrealized >= 0 ? '+' : ''}
+                            {fmtMoney(p.unrealized, p.liveCurrency ?? p.currency)}
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </div>
+                      <div className="mt-1 text-xs text-zinc-500 tabular-nums">
+                        LTP{' '}
+                        {typeof p.livePrice === 'number'
+                          ? fmtMoney(p.livePrice, p.liveCurrency ?? p.currency)
+                          : '—'}
+                        {typeof ltpPct === 'number' ? (
+                          <span>
+                            {' '}
+                            ({(ltpPct * 100).toFixed(2)}%)
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional name under ticker (subtle) */}
+                  {p.displayName ? (
+                    <div className="mt-2 truncate text-xs text-zinc-600">{p.displayName}</div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-        <div className="font-semibold text-zinc-900">Next steps</div>
-        <p className="mt-1 text-sm text-zinc-700">
-          Live prices ✅ → unrealized P/L ✅ → allocation charts.
-        </p>
+      <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+        <p className="text-sm text-zinc-700">Next: filters (Equity/Crypto), allocation chart, and per-asset details.</p>
         <div className="mt-3">
           <Link
             href="/trades"

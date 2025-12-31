@@ -15,7 +15,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'CapTrack',
+  applicationName: 'CapTrack',
   description: 'Mobile-first portfolio tracking: trades → positions → performance.',
+
+  // iOS Add to Home Screen
+  appleWebApp: {
+    capable: true,
+    title: 'CapTrack',
+    statusBarStyle: 'default',
+  },
+
+  // iOS primarily uses apple-touch-icon
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

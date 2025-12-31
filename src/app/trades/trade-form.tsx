@@ -42,13 +42,15 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
 
       <div style={{ display: 'grid', gap: 6 }}>
         <label className="text-sm font-semibold text-zinc-900">Occurred At</label>
-        <input
-          name="occurredAt"
-          type="datetime-local"
-          required
-          defaultValue={editTrade?.occurredAtLocal}
-          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
-        />
+        <div className="w-full overflow-hidden rounded-md border-2 border-zinc-300 bg-white">
+          <input
+            name="occurredAt"
+            type="datetime-local"
+            required
+            defaultValue={editTrade?.occurredAtLocal}
+            className="w-full min-w-0 appearance-none bg-transparent px-3 py-2 text-sm outline-none"
+          />
+        </div>
         {fieldErr('occurredAt')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
 
@@ -107,7 +109,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           min="0"
           required
           defaultValue={editTrade?.quantity}
-          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+          className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
         />
         {fieldErr('quantity')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
@@ -121,7 +123,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           min="0"
           required
           defaultValue={editTrade?.price}
-          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+          className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
         />
         {fieldErr('price')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
@@ -134,7 +136,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           step="any"
           min="0"
           defaultValue={editTrade?.fees ?? 0}
-          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+          className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
         />
         {fieldErr('fees')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
       </div>
@@ -147,7 +149,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           value={currency}
           readOnly
           aria-readonly="true"
-          className="w-full cursor-not-allowed rounded-md border-2 border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"
+          className="w-full max-w-full min-w-0 box-border cursor-not-allowed rounded-md border-2 border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"
         />
         {/* Hidden input to ensure server action receives currency */}
         <input type="hidden" name="currency" value={currency} />
@@ -157,7 +159,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
 
       <div style={{ display: 'grid', gap: 6 }}>
         <label className="text-sm font-semibold text-zinc-900">Notes</label>
-        <textarea name="notes" rows={3} defaultValue={editTrade?.notes ?? ''} className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none" />
+        <textarea name="notes" rows={3} defaultValue={editTrade?.notes ?? ''} className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none" />
       </div>
 
       {editTrade ? (
