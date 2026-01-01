@@ -7,6 +7,7 @@ import SymbolAutocomplete, { SymbolSuggestion } from './symbol-autocomplete';
 
 type Props = {
   portfolioId: string;
+  platforms: string[];
   editTrade?: {
     id: string;
     occurredAtLocal: string;
@@ -17,6 +18,7 @@ type Props = {
     price: number;
     fees: number;
     currency: string;
+    platform?: string | null;
     notes: string | null;
   };
 };
@@ -26,14 +28,24 @@ type ActionState =
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
   | undefined;
 
-export default function TradeForm({ portfolioId, editTrade }: Props) {
+export default function TradeForm({ portfolioId, editTrade, platforms }: Props) {
   const [state, formAction] = React.useActionState<ActionState, FormData>(createTradeAction, undefined);
 
   const [symbol, setSymbol] = React.useState(editTrade?.symbol ?? '');
   const [assetType, setAssetType] = React.useState(editTrade?.assetType ?? 'stock');
   const [currency, setCurrency] = React.useState(editTrade?.currency ?? 'USD');
+  const [platform, setPlatform] = React.useState(
+    editTrade?.platform ?? platforms?.[0] ?? 'Manual'
+  );
 
-  const fieldErr = (name: string) => state && 'fieldErrors' in state ? state.fieldErrors?.[name] : undefined;
+  const [touched, setTouched] = React.useState<Record<string, boolean>>({});
+  const markTouched = (name: string) => setTouched((t) => ({ ...t, [name]: true }));
+
+  const fieldErr = (name: string) => {
+    // If user has changed the field since the last server validation, hide the stale error.
+    if (touched[name]) return undefined;
+    return state && 'fieldErrors' in state ? state.fieldErrors?.[name] : undefined;
+  };
 
   return (
     <form action={formAction} style={{ display: 'grid', gap: 12 }}>
@@ -48,6 +60,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
             type="datetime-local"
             required
             defaultValue={editTrade?.occurredAtLocal}
+            onChange={() => markTouched('occurredAt')}
             className="w-full min-w-0 appearance-none bg-transparent px-3 py-2 text-sm outline-none"
           />
         </div>
@@ -60,6 +73,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           value={symbol}
           onSelect={(s: SymbolSuggestion) => {
             setSymbol(s.symbol);
+            markTouched('asset');
             setAssetType(s.type);
             // Infer currency (v1 rules)
             if (s.type === 'crypto') {
@@ -101,6 +115,30 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
       </div>
 
       <div style={{ display: 'grid', gap: 6 }}>
+        <label className="text-sm font-semibold text-zinc-900">Platform</label>
+        <select
+          name="platform"
+          value={platform}
+          onChange={(e) => {
+            setPlatform(e.target.value);
+            markTouched('platform');
+          }}
+          className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+        >
+          {(platforms?.length ? platforms : ['Manual']).map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+        {fieldErr('platform')?.map((e) => (
+          <small key={e} style={{ color: 'crimson' }}>
+            {e}
+          </small>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gap: 6 }}>
         <label className="text-sm font-semibold text-zinc-900">Quantity</label>
         <input
           name="quantity"
@@ -109,6 +147,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           min="0"
           required
           defaultValue={editTrade?.quantity}
+          onChange={() => markTouched('quantity')}
           className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
         />
         {fieldErr('quantity')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
@@ -123,6 +162,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           min="0"
           required
           defaultValue={editTrade?.price}
+          onChange={() => markTouched('price')}
           className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
         />
         {fieldErr('price')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
@@ -136,6 +176,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
           step="any"
           min="0"
           defaultValue={editTrade?.fees ?? 0}
+          onChange={() => markTouched('fees')}
           className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
         />
         {fieldErr('fees')?.map((e) => <small key={e} style={{ color: 'crimson' }}>{e}</small>)}
@@ -159,7 +200,7 @@ export default function TradeForm({ portfolioId, editTrade }: Props) {
 
       <div style={{ display: 'grid', gap: 6 }}>
         <label className="text-sm font-semibold text-zinc-900">Notes</label>
-        <textarea name="notes" rows={3} defaultValue={editTrade?.notes ?? ''} className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none" />
+        <textarea name="notes" rows={3} defaultValue={editTrade?.notes ?? ''} onChange={() => markTouched('notes')} className="w-full max-w-full min-w-0 box-border rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none" />
       </div>
 
       {editTrade ? (

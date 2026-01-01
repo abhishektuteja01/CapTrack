@@ -24,9 +24,12 @@ export class YahooPriceError extends Error {
  * - Crypto: BTC -> BTC-USD
  */
 export function toYahooSymbol(symbol: string, assetType?: string) {
+  if (!symbol) return symbol;
   const s = symbol.toUpperCase().trim();
 
   if (assetType === 'crypto') {
+    // If already a Yahoo crypto pair like ETH-USD, keep it as-is.
+    if (s.includes('-')) return s;
     return `${s}-USD`;
   }
 
@@ -43,25 +46,52 @@ export async function fetchYahooPrice(
 ): Promise<YahooQuote> {
   const yahooSymbol = toYahooSymbol(symbol, assetType);
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?range=1d&interval=1m`;
+  // FX symbols (e.g., USDINR=X) can intermittently return empty 1m data.
+  // Use a slightly wider range + daily interval for robustness.
+  const range = assetType === 'fx' ? '5d' : '1d';
+  const interval = assetType === 'fx' ? '1d' : '1m';
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?range=${range}&interval=${interval}`;
 
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'CapTrack/1.0',
-      Accept: 'application/json',
+      Accept: 'application/json,text/plain,*/*',
     },
-    // allow Next.js to cache briefly (safe for portfolio usage)
     next: { revalidate: 60 },
   });
 
+  const raw = await res.text();
+
   if (!res.ok) {
+    console.error('[yahoo] request failed', {
+      symbol: yahooSymbol,
+      status: res.status,
+      statusText: res.statusText,
+    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[yahoo] body snippet:', raw.slice(0, 300));
+    }
     throw new YahooPriceError(`Yahoo request failed for ${yahooSymbol}`);
   }
 
-  const json = await res.json();
+  let json: any;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    console.error('[yahoo] JSON parse failed for', yahooSymbol);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[yahoo] body snippet:', raw.slice(0, 300));
+    }
+    throw new YahooPriceError(`Yahoo JSON parse failed for ${yahooSymbol}`);
+  }
+
   const result = json?.chart?.result?.[0];
 
   if (!result) {
+    console.error('[yahoo] no chart result for', yahooSymbol);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[yahoo] chart payload:', json?.chart);
+    }
     throw new YahooPriceError(`No chart result for ${yahooSymbol}`);
   }
 
@@ -70,6 +100,16 @@ export async function fetchYahooPrice(
   const prices: number[] = result.indicators?.quote?.[0]?.close ?? [];
 
   if (!timestamps.length || !prices.length) {
+    console.error('[yahoo] no price data for', yahooSymbol);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[yahoo] details:', {
+        chartError: json?.chart?.error,
+        hasResult: Boolean(json?.chart?.result?.length),
+        meta: result?.meta,
+        range,
+        interval,
+      });
+    }
     throw new YahooPriceError(`No price data for ${yahooSymbol}`);
   }
 
@@ -101,7 +141,56 @@ export async function fetchYahooPrices(
     assets.map((a) => fetchYahooPrice(a.symbol, a.assetType))
   );
 
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      const a = assets[i];
+      console.error('[yahoo] quote failed', {
+        symbol: toYahooSymbol(a.symbol, a.assetType),
+        assetType: a.assetType,
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+      });
+    }
+  });
+
   return results
     .filter((r): r is PromiseFulfilledResult<YahooQuote> => r.status === 'fulfilled')
     .map((r) => r.value);
+}
+
+// --- FX caching (v1) ---
+// Best-effort in-memory cache. On serverless (Vercel), this persists only during warm sessions.
+let usdInrCache: { rate: number; fetchedAt: number } | null = null;
+const USD_INR_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Get USD→INR FX rate (Yahoo symbol: USDINR=X) with a 1-hour TTL cache.
+ * Returns undefined if the rate cannot be fetched.
+ */
+export async function getUsdInrRateCached(): Promise<number | undefined> {
+  const now = Date.now();
+  if (usdInrCache && now - usdInrCache.fetchedAt < USD_INR_TTL_MS) {
+    return usdInrCache.rate;
+  }
+
+  // Prefer direct USD → INR
+  const direct = await fetchYahooPrices([{ symbol: 'USDINR=X', assetType: 'fx' }]);
+  const directRate = direct?.[0]?.price;
+
+  if (typeof directRate === 'number' && directRate > 0) {
+    usdInrCache = { rate: directRate, fetchedAt: now };
+    return directRate;
+  }
+
+  // Fallback: INR → USD and invert
+  const reverse = await fetchYahooPrices([{ symbol: 'INRUSD=X', assetType: 'fx' }]);
+  const reverseRate = reverse?.[0]?.price;
+
+  if (typeof reverseRate === 'number' && reverseRate > 0) {
+    const inverted = 1 / reverseRate;
+    usdInrCache = { rate: inverted, fetchedAt: now };
+    return inverted;
+  }
+
+  console.error('[fx] USD/INR unavailable from Yahoo');
+  return undefined;
 }

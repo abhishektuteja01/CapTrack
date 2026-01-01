@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -23,14 +21,29 @@ export default function SymbolAutocomplete({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const justSelectedRef = useRef(false);
+  const programmaticSetRef = useRef(false);
 
   useEffect(() => {
+    programmaticSetRef.current = true;
     setQuery(value ?? '');
   }, [value]);
 
   useEffect(() => {
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
+
+    if (programmaticSetRef.current) {
+      programmaticSetRef.current = false;
+      setOpen(false);
+      return;
+    }
+
     if (!query || query.length < 1) {
       setResults([]);
+      setOpen(false);
       return;
     }
 
@@ -80,8 +93,10 @@ export default function SymbolAutocomplete({
                 key={`${r.symbol}-${r.exchange ?? ''}`}
                 type="button"
                 onClick={() => {
-                  setQuery(r.symbol);
+                  justSelectedRef.current = true;
+                  setResults([]);
                   setOpen(false);
+                  setQuery(r.symbol);
                   onSelect(r);
                 }}
                 className="flex w-full items-start justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-zinc-50"

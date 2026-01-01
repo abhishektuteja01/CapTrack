@@ -73,6 +73,16 @@ export const tradeSchema = z.object({
     .length(3, 'Currency must be a 3-letter ISO code')
     .transform((c) => c.toUpperCase()),
 
+  platform: z
+    .preprocess(
+      (v) => (v === undefined || v === null || String(v).trim() === '' ? 'Manual' : v),
+      z
+        .string()
+        .trim()
+        .min(1, 'Platform is required')
+        .max(64, 'Platform name is too long')
+    ),
+
   source: tradeSourceSchema,
 
   notes: z.string().optional(),

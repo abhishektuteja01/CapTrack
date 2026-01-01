@@ -14,6 +14,7 @@ export default function DeleteTradeButton({
   return (
     <form
       action={deleteTradeAction}
+      className="inline-flex"
       onSubmit={(e) => {
         const ok = window.confirm('Delete this trade? This cannot be undone.');
         if (!ok) e.preventDefault();
@@ -21,7 +22,10 @@ export default function DeleteTradeButton({
     >
       <input type="hidden" name="tradeId" value={tradeId} />
       <input type="hidden" name="portfolioId" value={portfolioId} />
-      <button type="submit" className={className}>
+      <button
+        type="submit"
+        className={`inline-flex items-center leading-none ${className ?? ''}`.trim()}
+      >
         Delete
       </button>
     </form>

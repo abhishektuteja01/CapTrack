@@ -2,6 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { tradeSchema } from '@/lib/validators/trade';
 import { supabaseServer } from '@/lib/db/supabase/server';
 
@@ -53,6 +54,8 @@ export async function createTradeAction(
 
     currency: toStringVal(formData.get('currency')) ?? 'USD',
 
+    platform: toStringVal(formData.get('platform')) ?? 'Manual',
+
     source: 'manual',
     notes: toStringVal(formData.get('notes')),
   };
@@ -83,6 +86,8 @@ export async function createTradeAction(
 
     currency: trade.currency,
 
+    platform: trade.platform ?? 'Manual',
+
     source: trade.source,
     notes: trade.notes ?? null,
   };
@@ -100,7 +105,8 @@ export async function createTradeAction(
   }
 
   revalidatePath('/trades');
-  return { ok: true, message: tradeId ? 'Trade updated.' : 'Trade added.' };
+  revalidatePath('/dashboard');
+  redirect('/trades');
 }
 
 export async function deleteTradeAction(formData: FormData): Promise<void> {
@@ -117,4 +123,5 @@ export async function deleteTradeAction(formData: FormData): Promise<void> {
     .eq('portfolio_id', portfolioId);
 
   revalidatePath('/trades');
+  revalidatePath('/dashboard');
 }
