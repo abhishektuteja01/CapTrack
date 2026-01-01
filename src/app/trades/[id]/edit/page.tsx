@@ -90,55 +90,21 @@ export default async function EditTradePage({
     return local.toISOString().slice(0, 16);
   };
 
-  const toMonthDayYearTime = (value: unknown) => {
-    if (!value) return '';
-    const s = typeof value === 'string' ? value : value instanceof Date ? value.toISOString() : String(value);
-    const d = new Date(s);
-    if (!Number.isFinite(d.getTime())) return '';
-
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const yyyy = String(d.getFullYear());
-    const hh = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
-
-    return `${mm}/${dd}/${yyyy}, ${hh}:${min}`;
-  };
-
-  const occurredAtValue = toMonthDayYearTime(t.occurred_at);
   const occurredAtLocalValue = toDateTimeLocalValue(t.occurred_at);
-  const occurredDateValue = occurredAtLocalValue.slice(0, 10);
 
   // Shape expected by TradeForm
   const editTrade = {
-    id: t.id,
-    // Preferred display string (matches "MM/DD/YYYY, HH:mm")
-    occurredAt: occurredAtValue,
-    occurredAtText: occurredAtValue,
-
-    // datetime-local compatible value (YYYY-MM-DDTHH:mm)
+    id: String(t.id),
     occurredAtLocal: occurredAtLocalValue,
-    occurred_at_local: occurredAtLocalValue,
-
-    // date-only fallback (YYYY-MM-DD)
-    occurredDate: occurredDateValue,
-    occurred_date: occurredDateValue,
-
-    // original ISO fallback
-    occurredAtISO:
-      typeof t.occurred_at === 'string' ? t.occurred_at : t.occurred_at ? String(t.occurred_at) : '',
-    occurred_at:
-      typeof t.occurred_at === 'string' ? t.occurred_at : t.occurred_at ? String(t.occurred_at) : '',
-
-    symbol: t.asset_symbol,
-    assetType: t.asset_type,
-    side: t.side,
-    quantity: String(t.quantity ?? ''),
-    price: String(t.price ?? ''),
-    fees: String(t.fees ?? ''),
-    currency: t.currency,
-    platform: t.platform ?? 'Manual',
-    notes: t.notes ?? '',
+    symbol: String(t.asset_symbol ?? ''),
+    assetType: String(t.asset_type ?? ''),
+    side: (t.side as 'BUY' | 'SELL') ?? 'BUY',
+    quantity: typeof t.quantity === 'number' ? t.quantity : Number(t.quantity),
+    price: typeof t.price === 'number' ? t.price : Number(t.price),
+    fees: typeof t.fees === 'number' ? t.fees : Number(t.fees),
+    currency: String(t.currency ?? ''),
+    platform: t.platform ?? null,
+    notes: (t.notes ?? null) as string | null,
   };
 
   return (

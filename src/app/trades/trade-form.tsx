@@ -5,6 +5,13 @@ import React from 'react';
 import { createTradeAction } from './actions';
 import SymbolAutocomplete, { SymbolSuggestion } from './symbol-autocomplete';
 
+const nowDateTimeLocal = () => {
+  const d = new Date();
+  // Convert to local time and format as YYYY-MM-DDTHH:mm for <input type="datetime-local">
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+};
+
 type Props = {
   portfolioId: string;
   platforms: string[];
@@ -59,7 +66,7 @@ export default function TradeForm({ portfolioId, editTrade, platforms }: Props) 
             name="occurredAt"
             type="datetime-local"
             required
-            defaultValue={editTrade?.occurredAtLocal}
+            defaultValue={editTrade?.occurredAtLocal ?? nowDateTimeLocal()}
             onChange={() => markTouched('occurredAt')}
             className="w-full min-w-0 appearance-none bg-transparent px-3 py-2 text-sm outline-none"
           />
