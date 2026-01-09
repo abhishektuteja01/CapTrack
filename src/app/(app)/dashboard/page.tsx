@@ -1,27 +1,29 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
-import { supabaseServer } from '@/lib/db/supabase/server';
+import { supabaseServer } from '@/lib/supabase/server';
 import { derivePositions } from '@/lib/domain/portfolio/positions';
 import { fetchYahooPrices, getUsdInrRateCached, toYahooSymbol } from '@/lib/services/prices/yahoo';
-import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { getUser } from '@/lib/supabase/auth';
+import { ensureUserBootstrap } from '@/lib/bootstrap';
+
+export const dynamic = 'force-dynamic';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-function normalizePlatforms(raw: string): string[] {
-  const lines = raw
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+function normalizePlatforms(raw: string[] | null | undefined): string[] {
+  const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
 
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const p of lines) {
+  for (const p of items) {
     const key = p.toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
       out.push(p);
     }
   }
+
   return out.length ? out : ['Manual'];
 }
 
@@ -40,24 +42,54 @@ export default async function DashboardPage({
     revalidatePath('/dashboard');
   }
 
+  const user = await getUser();
+  if (!user) {
+    redirect('/login');
+  }
+  // First authenticated landing page: ensure default portfolio + settings exist.
+  await ensureUserBootstrap(user.id);
+
+  try {
+
   const sp = searchParams ? await searchParams : undefined;
   const platformFilterRaw = pickFirst(sp?.platform);
   const platformFilter = platformFilterRaw ? String(platformFilterRaw) : undefined;
 
-  const cookieStore = await cookies();
-  const baseFromCookie = (cookieStore.get('captrack_base_ccy')?.value ?? 'USD').toUpperCase();
-  const BASE_CCY: 'USD' | 'INR' = baseFromCookie === 'INR' ? 'INR' : 'USD';
-
-  const platformsCookie = cookieStore.get('captrack_platforms')?.value;
-  const platforms = normalizePlatforms((platformsCookie ?? 'Manual').replaceAll('%0A', '\n'));
-
   const supabase = await supabaseServer();
 
-  const { data: portfolios } = await supabase
+  const { data: userSettings, error: settingsError } = await supabase
+    .from('user_settings')
+    .select('base_currency, platforms')
+    .maybeSingle();
+
+  if (settingsError) {
+    return (
+      <div className="rounded-xl border border-zinc-200 p-4">
+        <h1 className="text-lg font-semibold">Dashboard</h1>
+        <p className="mt-1 text-sm text-zinc-600">Failed to load settings: {settingsError.message}</p>
+      </div>
+    );
+  }
+
+  const baseFromDb = String(userSettings?.base_currency ?? 'USD').toUpperCase();
+  const BASE_CCY: 'USD' | 'INR' = baseFromDb === 'INR' ? 'INR' : 'USD';
+
+  const platforms = normalizePlatforms(userSettings?.platforms as string[] | null | undefined);
+
+  const { data: portfolios, error: portfoliosError } = await supabase
     .from('portfolios')
-    .select('id, name')
+    .select('id, name, created_at')
     .order('created_at', { ascending: true })
     .limit(1);
+
+  if (portfoliosError) {
+    return (
+      <div className="rounded-xl border border-zinc-200 p-4">
+        <h1 className="text-lg font-semibold">Dashboard</h1>
+        <p className="mt-1 text-sm text-zinc-600">Failed to load portfolios: {portfoliosError.message}</p>
+      </div>
+    );
+  }
 
   const portfolio = portfolios?.[0];
 
@@ -77,9 +109,21 @@ export default async function DashboardPage({
     )
     .eq('portfolio_id', portfolio.id);
 
-  const filteredTrades = (trades ?? []).filter((t) => {
+  type TradeRow = {
+    occurred_at: string;
+    asset_symbol: string;
+    asset_type: string;
+    side: 'BUY' | 'SELL';
+    quantity: number;
+    price: number;
+    fees: number;
+    currency: string;
+    platform: string | null;
+  };
+
+  const filteredTrades = (trades as TradeRow[] | null ?? []).filter((t) => {
     if (!platformFilter) return true;
-    return String((t as any).platform ?? 'Manual') === platformFilter;
+    return (t.platform ?? 'Manual') === platformFilter;
   });
 
   const positions = derivePositions(
@@ -140,7 +184,17 @@ export default async function DashboardPage({
 
   // No longer add USDINR=X here; use FX cache helper later.
 
-  const quotes = await fetchYahooPrices(quoteInputs);
+  let quotes: any[] = [];
+  let quotesError: string | undefined;
+
+  if (quoteInputs.length > 0) {
+    try {
+      quotes = await fetchYahooPrices(quoteInputs);
+    } catch (e) {
+      quotesError = e instanceof Error ? e.message : 'Failed to fetch quotes';
+      quotes = [];
+    }
+  }
 
   const quoteByYahooSymbol = new Map(
     quotes.map((q) => [q.symbol.toUpperCase(), q])
@@ -174,7 +228,23 @@ export default async function DashboardPage({
     const ccy = q?.currency ?? p.currency;
     const displayName = q?.name;
 
+    // Day change % logic (best-effort from Yahoo quote)
+    const prevClose = typeof q?.previousClose === 'number' ? q.previousClose : undefined;
+    const dayChangePct = typeof q?.dayChangePercent === 'number'
+      ? q.dayChangePercent / 100
+      : (typeof price === 'number' && typeof prevClose === 'number' && prevClose !== 0)
+        ? (price - prevClose) / prevClose
+        : undefined;
+
     const marketValue = typeof price === 'number' ? p.quantity * price : undefined;
+
+    // Compute per-position day P&L (in instrument currency) and prevCloseValue
+    const dayPnl = (typeof price === 'number' && typeof prevClose === 'number')
+      ? (price - prevClose) * p.quantity
+      : undefined;
+
+    const prevCloseValue = typeof prevClose === 'number' ? prevClose * p.quantity : undefined;
+
     const unrealized =
       typeof marketValue === 'number' ? marketValue - p.costBasis : undefined;
     const unrealizedPct =
@@ -186,6 +256,10 @@ export default async function DashboardPage({
     const costBasisBase = typeof factor === 'number' ? p.costBasis * factor : undefined;
     const marketValueBase = typeof factor === 'number' && typeof marketValue === 'number' ? marketValue * factor : undefined;
     const unrealizedBase = typeof factor === 'number' && typeof unrealized === 'number' ? unrealized * factor : undefined;
+
+    // Base currency conversions for dayPnl and prevCloseValue
+    const dayPnlBase = typeof factor === 'number' && typeof dayPnl === 'number' ? dayPnl * factor : undefined;
+    const prevCloseValueBase = typeof factor === 'number' && typeof prevCloseValue === 'number' ? prevCloseValue * factor : undefined;
 
     return {
       ...p,
@@ -200,18 +274,13 @@ export default async function DashboardPage({
       marketValueBase,
       unrealizedBase,
       quoteTimestamp: q?.timestamp,
+      dayChangePct,
+      prevClose,
+      dayPnl,
+      dayPnlBase,
+      prevCloseValueBase,
     };
   });
-
-  const totals = enriched.reduce(
-    (acc, p) => {
-      if (typeof p.marketValue === 'number') acc.marketValue += p.marketValue;
-      acc.costBasis += p.costBasis;
-      if (typeof p.unrealized === 'number') acc.unrealized += p.unrealized;
-      return acc;
-    },
-    { marketValue: 0, costBasis: 0, unrealized: 0 }
-  );
 
   const totalsBase = enriched.reduce(
     (acc, p) => {
@@ -222,6 +291,20 @@ export default async function DashboardPage({
     },
     { marketValue: 0, costBasis: 0, unrealized: 0 }
   );
+
+  // Compute totals for "Today's P&L" in base currency
+  const dayTotalsBase = enriched.reduce(
+    (acc, p) => {
+      if (typeof p.dayPnlBase === 'number') acc.dayPnl += p.dayPnlBase;
+      if (typeof p.prevCloseValueBase === 'number') acc.prevCloseValue += p.prevCloseValueBase;
+      return acc;
+    },
+    { dayPnl: 0, prevCloseValue: 0 }
+  );
+
+  const dayPct = dayTotalsBase.prevCloseValue !== 0
+    ? dayTotalsBase.dayPnl / dayTotalsBase.prevCloseValue
+    : 0;
 
   const currencySet = new Set(
     enriched
@@ -284,6 +367,12 @@ export default async function DashboardPage({
         ))}
       </section>
 
+      {quotesError ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          Live quotes unavailable right now — showing positions without LTP. ({quotesError})
+        </div>
+      ) : null}
+
       {hasMixedCurrencies ? (
         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">
           Totals are converted to <span className="font-semibold">{BASE_CCY}</span>
@@ -326,6 +415,18 @@ export default async function DashboardPage({
             </span>
           </div>
         </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="text-sm font-medium text-zinc-500">Today&apos;s P&amp;L</div>
+          <div className="flex items-center gap-2">
+            <div className={`text-lg font-semibold tabular-nums ${pnlClass(fxReady ? dayTotalsBase.dayPnl : undefined)}`}>
+              {fxReady && dayTotalsBase.dayPnl >= 0 ? '+' : ''}
+              {fxReady ? fmtMoney(dayTotalsBase.dayPnl, primaryCurrency) : '—'}
+            </div>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold tabular-nums ${pnlBgClass(fxReady ? dayTotalsBase.dayPnl : undefined)}`}>
+              {fxReady ? `${(dayPct * 100).toFixed(2)}%` : '—'}
+            </span>
+          </div>
+        </div>
       </section>
 
       {/* Positions list */}
@@ -335,10 +436,6 @@ export default async function DashboardPage({
         ) : (
           <ul className="divide-y divide-zinc-200">
             {enriched.map((p) => {
-              const ltpPct = typeof p.avgCost === 'number' && p.avgCost !== 0 && typeof p.livePrice === 'number'
-                ? (p.livePrice - p.avgCost) / p.avgCost
-                : undefined;
-
               return (
                 <li key={`${p.asset.type}:${p.asset.symbol}`} className="p-4">
                   <div className="flex items-start justify-between gap-4">
@@ -379,10 +476,10 @@ export default async function DashboardPage({
                         {typeof p.livePrice === 'number'
                           ? fmtMoney(p.livePrice, p.liveCurrency ?? p.currency)
                           : '—'}
-                        {typeof ltpPct === 'number' ? (
+                        {typeof p.dayChangePct === 'number' ? (
                           <span>
                             {' '}
-                            ({(ltpPct * 100).toFixed(2)}%)
+                            ({(p.dayChangePct * 100).toFixed(2)}%)
                           </span>
                         ) : null}
                       </div>
@@ -394,7 +491,36 @@ export default async function DashboardPage({
           </ul>
         )}
       </section>
+      {/* Sticky day P&L bar (mobile) */}
+      {enriched.length > 0 ? (
+        <div className="fixed left-0 right-0 bottom-20 z-40 px-4 sm:hidden">
+          <div className="rounded-2xl border border-zinc-200 bg-white/95 backdrop-blur px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs font-medium text-zinc-500">Today&apos;s P&amp;L</div>
+              <div className="flex items-center gap-2">
+                <div className={`text-sm font-semibold tabular-nums ${pnlClass(fxReady ? dayTotalsBase.dayPnl : undefined)}`}>
+                  {fxReady && dayTotalsBase.dayPnl >= 0 ? '+' : ''}
+                  {fxReady ? fmtMoney(dayTotalsBase.dayPnl, primaryCurrency) : '—'}
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold tabular-nums ${pnlBgClass(fxReady ? dayTotalsBase.dayPnl : undefined)}`}>
+                  {fxReady ? `${(dayPct * 100).toFixed(2)}%` : '—'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
     </div>
   );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return (
+      <div className="rounded-xl border border-zinc-200 p-4">
+        <h1 className="text-lg font-semibold">Dashboard</h1>
+        <p className="mt-1 text-sm text-zinc-600">Something went wrong loading your dashboard.</p>
+        <p className="mt-2 text-xs text-zinc-500 font-mono break-all">{message}</p>
+      </div>
+    );
+  }
 }

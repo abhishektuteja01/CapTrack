@@ -1,6 +1,6 @@
 'use client';
 
-import { deleteTradeAction } from './actions';
+import { deleteTradeAction } from '@/app/(app)/trades/actions';
 
 export default function DeleteTradeButton({
   tradeId,

@@ -1,12 +1,19 @@
 // src/app/trades/page.tsx
-import { supabaseServer } from '@/lib/db/supabase/server';
-import RecentTrades from './recent-trades';
+import { supabaseServer } from '@/lib/supabase/server';
+import RecentTrades from '@/components/trades/recent-trades';
+import { redirect } from 'next/navigation';
+import { getUser } from '@/lib/supabase/auth';
+import Link from 'next/link';
 
 export default async function TradesPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const user = await getUser();
+  if (!user) {
+    redirect('/login');
+  }
   const supabase = await supabaseServer();
 
   const sp = searchParams ? await searchParams : undefined;
@@ -18,7 +25,7 @@ export default async function TradesPage({
   // Later: allow selecting portfolios, per-user portfolios, etc.
   const { data: portfolios, error } = await supabase
     .from('portfolios')
-    .select('id, name')
+    .select('id, name, created_at')
     .order('created_at', { ascending: true })
     .limit(1);
 
@@ -37,7 +44,7 @@ export default async function TradesPage({
     return (
       <div style={{ padding: 24 }}>
         <h1>Trades</h1>
-        <p>No portfolio found. Create a “Main” portfolio row in Supabase first.</p>
+        <p>No portfolio found.</p>
       </div>
     );
   }
@@ -53,12 +60,12 @@ export default async function TradesPage({
             </p>
           </div>
 
-          <a
+          <Link
             href="/trades/new"
             className="inline-flex h-10 items-center justify-center rounded-md border-2 border-zinc-900 bg-zinc-900 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
           >
             Add trade
-          </a>
+          </Link>
         </div>
       </header>
 

@@ -1,5 +1,3 @@
-
-
 import { NextResponse } from 'next/server';
 
 // Normalized symbol suggestion returned to the client
@@ -23,6 +21,19 @@ function normalizeType(quoteType?: string): SymbolSuggestion['type'] {
     default:
       return 'other';
   }
+}
+
+type YahooSearchQuote = {
+  symbol?: string;
+  shortname?: string;
+  quoteType?: string;
+  exchange?: string;
+};
+
+function isYahooSearchQuote(value: unknown): value is YahooSearchQuote {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.symbol === 'string' && typeof v.shortname === 'string';
 }
 
 export async function GET(req: Request) {
@@ -53,11 +64,14 @@ export async function GET(req: Request) {
 
     const json = await res.json();
 
-    const suggestions: SymbolSuggestion[] = (json?.quotes ?? [])
-      .filter((q: any) => q.symbol && q.shortname)
-      .map((q: any) => ({
-        symbol: q.symbol,
-        name: q.shortname,
+    const rawQuotes: unknown = (json as { quotes?: unknown }).quotes;
+    const quotes = Array.isArray(rawQuotes) ? rawQuotes : [];
+
+    const suggestions: SymbolSuggestion[] = quotes
+      .filter(isYahooSearchQuote)
+      .map((q) => ({
+        symbol: q.symbol!,
+        name: q.shortname!,
         type: normalizeType(q.quoteType),
         exchange: q.exchange,
       }));

@@ -1,18 +1,14 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 
-import TradeForm from '../../trade-form';
-import { supabaseServer } from '@/lib/db/supabase/server';
+import TradeForm from '@/components/trades/trade-form';
+import { supabaseServer } from '@/lib/supabase/server';
 
-function normalizePlatforms(raw: string): string[] {
-  const lines = raw
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+function normalizePlatforms(raw: string[] | null | undefined): string[] {
+  const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
 
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const p of lines) {
+  for (const p of items) {
     const key = p.toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
@@ -66,9 +62,16 @@ export default async function EditTradePage({
 
   const portfolio = portfolios?.[0];
 
-  const cookieStore = await cookies();
-  const platformsCookie = cookieStore.get('captrack_platforms')?.value;
-  const platforms = normalizePlatforms((platformsCookie ?? 'Manual').replaceAll('%0A', '\n'));
+  const { data: userSettings, error: settingsErr } = await supabase
+    .from('user_settings')
+    .select('platforms')
+    .single();
+
+  if (settingsErr) {
+    console.warn('Failed to load user settings:', settingsErr.message);
+  }
+
+  const platforms = normalizePlatforms(userSettings?.platforms as string[] | null | undefined);
 
   const toDateTimeLocalValue = (value: unknown) => {
     if (!value) return '';

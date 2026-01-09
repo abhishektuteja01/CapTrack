@@ -1,13 +1,29 @@
-import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { supabaseServer } from '@/lib/supabase/server';
 
-function normalizePlatforms(raw: string): string[] {
+function normalizePlatforms(raw: string[] | null | undefined): string[] {
+  const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of items) {
+    const key = p.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(p);
+    }
+  }
+
+  return out.length ? out : ['Manual'];
+}
+
+function normalizePlatformsFromTextarea(raw: string): string[] {
   const lines = raw
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // de-dupe (case-insensitive) while preserving order
   const seen = new Set<string>();
   const out: string[] = [];
   for (const p of lines) {
@@ -22,15 +38,27 @@ function normalizePlatforms(raw: string): string[] {
 }
 
 export default async function SettingsPage() {
-  const cookieStore = await cookies();
+  const supabase = await supabaseServer();
 
-  // Base currency
-  const current = (cookieStore.get('captrack_base_ccy')?.value ?? 'USD').toUpperCase();
+  const { data: userSettings, error: settingsErr } = await supabase
+    .from('user_settings')
+    .select('base_currency, platforms')
+    .single();
+
+  // If something else went wrong (not just "no rows"), surface it.
+  if (settingsErr && !userSettings) {
+    return (
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-red-600">Failed to load settings: {settingsErr.message}</p>
+      </div>
+    );
+  }
+
+  const current = String(userSettings?.base_currency ?? 'USD').toUpperCase();
   const baseCcy = (current === 'INR' ? 'INR' : 'USD') as 'USD' | 'INR';
 
-  // Platforms
-  const platformsCookie = cookieStore.get('captrack_platforms')?.value;
-  const platforms = normalizePlatforms((platformsCookie ?? 'Manual').replaceAll('%0A', '\n'));
+  const platforms = normalizePlatforms(userSettings?.platforms as string[] | null | undefined);
   const platformsText = platforms.join('\n');
 
   async function setBaseCurrency(formData: FormData) {
@@ -38,12 +66,15 @@ export default async function SettingsPage() {
     const next = String(formData.get('baseCurrency') ?? 'USD').toUpperCase();
     const value = (next === 'INR' ? 'INR' : 'USD') as 'USD' | 'INR';
 
-    const store = await cookies();
-    store.set('captrack_base_ccy', value, {
-      path: '/',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365,
-    });
+    const supabase = await supabaseServer();
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) redirect('/login');
+
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({ user_id: auth.user.id, base_currency: value }, { onConflict: 'user_id' });
+
+    if (error) throw error;
 
     revalidatePath('/dashboard');
     revalidatePath('/settings');
@@ -52,14 +83,17 @@ export default async function SettingsPage() {
   async function setPlatforms(formData: FormData) {
     'use server';
     const raw = String(formData.get('platforms') ?? '');
-    const list = normalizePlatforms(raw);
+    const list = normalizePlatformsFromTextarea(raw);
 
-    const store = await cookies();
-    store.set('captrack_platforms', list.join('\n'), {
-      path: '/',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365,
-    });
+    const supabase = await supabaseServer();
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) redirect('/login');
+
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({ user_id: auth.user.id, platforms: list }, { onConflict: 'user_id' });
+
+    if (error) throw error;
 
     revalidatePath('/dashboard');
     revalidatePath('/trades');
@@ -155,7 +189,7 @@ export default async function SettingsPage() {
       <section className="rounded-xl bg-zinc-50 p-4 text-sm text-zinc-700">
         <div className="font-medium text-zinc-900">Prototype note</div>
         <p className="mt-1">
-          Platforms are stored locally (cookie) for now. Later we’ll persist per-user settings in Supabase.
+          Settings are stored per user in Supabase and follow you across devices.
         </p>
       </section>
     </div>

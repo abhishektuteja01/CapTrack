@@ -1,5 +1,5 @@
 // src/app/trades/recent-trades.tsx
-import { supabaseServer } from '@/lib/db/supabase/server';
+import { supabaseServer } from '@/lib/supabase/server';
 import Link from 'next/link';
 import DeleteTradeButton from './delete-trade-button';
 
@@ -57,8 +57,6 @@ export default async function RecentTrades({
   page: number;
 }) {
   const pageSize = 5;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
 
   const supabase = await supabaseServer();
 

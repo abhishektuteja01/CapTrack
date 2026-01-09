@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { createTradeAction } from './actions';
+import { createTradeAction } from '@/app/(app)/trades/actions';
 import SymbolAutocomplete, { SymbolSuggestion } from './symbol-autocomplete';
 
 const nowDateTimeLocal = () => {

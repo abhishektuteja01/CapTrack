@@ -8,6 +8,10 @@ export type YahooQuote = {
   name?: string;
   price: number;
   currency: string;
+  /** Previous close (best effort) from Yahoo chart meta. */
+  previousClose?: number;
+  /** Regular market change percent (best effort) as a percent value, e.g. 1.23 means +1.23%. */
+  dayChangePercent?: number;
   timestamp: number; // unix ms
 };
 
@@ -34,6 +38,30 @@ export function toYahooSymbol(symbol: string, assetType?: string) {
   }
 
   return s;
+}
+
+type YahooChartMeta = {
+  currency?: string;
+  shortName?: string;
+  longName?: string;
+  previousClose?: number;
+  chartPreviousClose?: number;
+  regularMarketPreviousClose?: number;
+  regularMarketChangePercent?: number;
+};
+
+type YahooChartResult = {
+  meta?: YahooChartMeta;
+  timestamp?: number[];
+  indicators?: {
+    quote?: Array<{
+      close?: Array<number | null>;
+    }>;
+  };
+};
+
+function isYahooChartResult(value: unknown): value is YahooChartResult {
+  return typeof value === 'object' && value !== null;
 }
 
 /**
@@ -74,7 +102,7 @@ export async function fetchYahooPrice(
     throw new YahooPriceError(`Yahoo request failed for ${yahooSymbol}`);
   }
 
-  let json: any;
+  let json: unknown;
   try {
     json = JSON.parse(raw);
   } catch {
@@ -85,27 +113,48 @@ export async function fetchYahooPrice(
     throw new YahooPriceError(`Yahoo JSON parse failed for ${yahooSymbol}`);
   }
 
-  const result = json?.chart?.result?.[0];
+  const resultUnknown =
+    typeof json === 'object' && json !== null
+      ? (json as { chart?: { result?: unknown[] } })?.chart?.result?.[0]
+      : undefined;
+
+  const result: YahooChartResult | undefined = isYahooChartResult(resultUnknown)
+    ? (resultUnknown as YahooChartResult)
+    : undefined;
 
   if (!result) {
     console.error('[yahoo] no chart result for', yahooSymbol);
     if (process.env.NODE_ENV !== 'production') {
-      console.error('[yahoo] chart payload:', json?.chart);
+      const chart =
+        typeof json === 'object' && json !== null
+          ? (json as { chart?: unknown })?.chart
+          : undefined;
+      console.error('[yahoo] chart payload:', chart);
     }
     throw new YahooPriceError(`No chart result for ${yahooSymbol}`);
   }
 
   const meta = result.meta;
+  const previousClose =
+    meta?.previousClose ?? meta?.regularMarketPreviousClose ?? meta?.chartPreviousClose;
+
+  const dayChangePercent = meta?.regularMarketChangePercent;
+
   const timestamps: number[] = result.timestamp ?? [];
-  const prices: number[] = result.indicators?.quote?.[0]?.close ?? [];
+  const prices: Array<number | null> = result.indicators?.quote?.[0]?.close ?? [];
 
   if (!timestamps.length || !prices.length) {
     console.error('[yahoo] no price data for', yahooSymbol);
     if (process.env.NODE_ENV !== 'production') {
+      const chartObj =
+        typeof json === 'object' && json !== null
+          ? (json as { chart?: { error?: unknown; result?: unknown[] } }).chart
+          : undefined;
+
       console.error('[yahoo] details:', {
-        chartError: json?.chart?.error,
-        hasResult: Boolean(json?.chart?.result?.length),
-        meta: result?.meta,
+        chartError: chartObj?.error,
+        hasResult: Boolean(chartObj?.result?.length),
+        meta: result.meta,
         range,
         interval,
       });
@@ -124,8 +173,14 @@ export async function fetchYahooPrice(
   return {
     symbol: yahooSymbol,
     name: meta?.shortName ?? meta?.longName,
-    price: prices[idx],
-    currency: meta.currency ?? 'USD',
+    price: (() => {
+      const p = prices[idx];
+      if (p == null) throw new YahooPriceError(`All prices null for ${yahooSymbol}`);
+      return p;
+    })(),
+    currency: meta?.currency ?? 'USD',
+    previousClose: typeof previousClose === 'number' ? previousClose : undefined,
+    dayChangePercent: typeof dayChangePercent === 'number' ? dayChangePercent : undefined,
     timestamp: timestamps[idx] * 1000,
   };
 }
