@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
+import { FadeIn } from '@/components/ui/fade-in';
 
 function normalizePlatforms(raw: string[] | null | undefined): string[] {
   const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
@@ -102,96 +103,96 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-zinc-600">
-          Preferences and integrations will live here. For now, CapTrack focuses on clean trade entry and correctness.
-        </p>
-      </section>
+      <FadeIn>
+        <section className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Settings</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Manage your global preferences and integrations.
+          </p>
+        </section>
+      </FadeIn>
 
-      <section className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2">
         {/* Base currency */}
-        <div className="rounded-xl border border-zinc-200 p-4">
-          <div className="text-sm font-medium">Base currency</div>
-          <p className="mt-1 text-sm text-zinc-600">
-            Dashboard totals will be converted into your selected base currency.
+        <FadeIn delay={0.1} className="rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
+          <div className="text-sm font-semibold text-zinc-900 dark:text-white">Base currency</div>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Default currency for dashboard totals.
           </p>
 
-          <form action={setBaseCurrency} className="mt-3 flex items-center gap-2">
-            <select
-              name="baseCurrency"
-              defaultValue={baseCcy}
-              className="h-10 w-full max-w-[180px] rounded-md border-2 border-zinc-300 bg-white px-3 text-sm focus:border-zinc-900 focus:outline-none"
-            >
-              <option value="USD">USD</option>
-              <option value="INR">INR</option>
-            </select>
+          <form action={setBaseCurrency} className="mt-4 flex items-center gap-2">
+            <div className="relative">
+              <select
+                name="baseCurrency"
+                defaultValue={baseCcy}
+                className="h-9 w-[120px] appearance-none rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white dark:focus:border-white dark:focus:bg-black"
+              >
+                <option value="USD">USD</option>
+                <option value="INR">INR</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
             <button
               type="submit"
-              className="h-10 rounded-md border-2 border-zinc-900 bg-zinc-900 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
+              className="h-9 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               Save
             </button>
           </form>
 
-          <p className="mt-2 text-xs text-zinc-500">
-            Current: <span className="font-semibold text-zinc-900">{baseCcy}</span>
+          <p className="mt-3 text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
+            Current: <span className="font-bold text-zinc-700 dark:text-zinc-300">{baseCcy}</span>
           </p>
-        </div>
+        </FadeIn>
 
         {/* Platforms */}
-        <div className="rounded-xl border border-zinc-200 p-4">
-          <div className="text-sm font-medium">Trade platforms</div>
-          <p className="mt-1 text-sm text-zinc-600">
-            Add the platforms you use (one per line). This list will show as a dropdown in Add Trade and as a filter on the dashboard.
+        <FadeIn delay={0.2} className="rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
+          <div className="text-sm font-semibold text-zinc-900 dark:text-white">Trade platforms</div>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            One platform per line. Used in dropdowns/filters.
           </p>
 
-          <form action={setPlatforms} className="mt-3 space-y-2">
+          <form action={setPlatforms} className="mt-4 space-y-3">
             <textarea
               name="platforms"
               defaultValue={platformsText}
-              rows={6}
-              className="w-full rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
-              placeholder="Manual\nRobinhood\nCoinbase\nZerodha"
+              rows={5}
+              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white dark:focus:border-white dark:focus:bg-black"
+              placeholder={'Manual\nRobinhood\nCoinbase'}
             />
             <button
               type="submit"
-              className="h-10 rounded-md border-2 border-zinc-900 bg-zinc-900 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
+              className="h-9 w-full rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               Save platforms
             </button>
           </form>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {platforms.map((p) => (
               <span
                 key={p}
-                className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700"
+                className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
               >
                 {p}
               </span>
             ))}
           </div>
+        </FadeIn>
 
-          <p className="mt-2 text-xs text-zinc-500">
-            Tip: keep names short (e.g., “Zerodha”, “Coinbase”).
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-zinc-200 p-4 sm:col-span-2">
-          <div className="text-sm font-medium">Imports</div>
-          <p className="mt-1 text-sm text-zinc-600">
+        <FadeIn delay={0.3} className="rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl sm:col-span-2 dark:border-zinc-800/60 dark:bg-zinc-900/60">
+          <div className="text-sm font-semibold text-zinc-900 dark:text-white">Imports</div>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Coming soon: import trades from broker apps via CSV or direct integrations.
           </p>
-        </div>
-      </section>
+        </FadeIn>
+      </div>
 
-      <section className="rounded-xl bg-zinc-50 p-4 text-sm text-zinc-700">
-        <div className="font-medium text-zinc-900">Prototype note</div>
-        <p className="mt-1">
-          Settings are stored per user in Supabase and follow you across devices.
-        </p>
-      </section>
+      <FadeIn delay={0.4} className="rounded-2xl bg-zinc-50/50 p-4 text-xs text-zinc-500 text-center dark:bg-zinc-900/30 dark:text-zinc-600">
+        Preferences are synced to your account.
+      </FadeIn>
     </div>
   );
 }

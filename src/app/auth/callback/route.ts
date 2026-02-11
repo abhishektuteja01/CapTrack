@@ -5,8 +5,9 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const nextParam = url.searchParams.get('next') ?? '/dashboard';
-  const next = nextParam.startsWith('/') ? nextParam : '/dashboard';
+  const nextParam = url.searchParams.get('next');
+
+  const next = (nextParam && nextParam.startsWith('/')) ? nextParam : '/dashboard';
 
   if (!code) {
     return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(next)}`, url.origin));

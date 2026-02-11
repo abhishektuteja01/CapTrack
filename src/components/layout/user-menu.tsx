@@ -19,8 +19,8 @@ export default function UserMenu({ user }: UserMenuProps) {
     typeof metadata.display_name === 'string'
       ? metadata.display_name
       : typeof metadata.full_name === 'string'
-      ? metadata.full_name
-      : user.email?.split('@')[0] ?? 'User';
+        ? metadata.full_name
+        : user.email?.split('@')[0] ?? 'User';
 
   const firstName = displayName.split(' ')[0];
 
@@ -38,7 +38,7 @@ export default function UserMenu({ user }: UserMenuProps) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="rounded-md px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
+        className="rounded-full px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors dark:text-zinc-200 dark:hover:bg-zinc-800"
         aria-haspopup="menu"
         aria-expanded={open}
       >

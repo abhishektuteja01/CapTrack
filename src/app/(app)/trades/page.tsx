@@ -4,6 +4,8 @@ import RecentTrades from '@/components/trades/recent-trades';
 import { redirect } from 'next/navigation';
 import { getUser } from '@/lib/supabase/auth';
 import Link from 'next/link';
+import { FadeIn } from '@/components/ui/fade-in';
+import TradeFilters from '@/components/trades/trade-filters';
 
 export default async function TradesPage({
   searchParams,
@@ -50,26 +52,39 @@ export default async function TradesPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6">
-      <header className="space-y-1">
+    <div className="space-y-6">
+      <FadeIn>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Trades</h1>
-            <p className="text-sm text-zinc-600">
-              Adding trades into: <span className="font-medium text-zinc-900">{portfolio.name}</span>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Trades</h1>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Adding trades into: <span className="font-semibold text-zinc-900 dark:text-zinc-200">{portfolio.name}</span>
             </p>
           </div>
 
-          <Link
-            href="/trades/new"
-            className="inline-flex h-10 items-center justify-center rounded-md border-2 border-zinc-900 bg-zinc-900 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
-          >
-            Add trade
-          </Link>
-        </div>
-      </header>
+          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+            <TradeFilters />
 
-      <RecentTrades portfolioId={portfolio.id} page={page} />
+            <Link
+              href="/trades/new"
+              className="inline-flex h-10 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-medium text-white transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 whitespace-nowrap dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            >
+              Add trade
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          {/* Placeholder for now to ensure imports work */}
+        </div>
+      </FadeIn>
+
+      <RecentTrades
+        portfolioId={portfolio.id}
+        page={page}
+        search={sp?.search}
+        sort={sp?.sort}
+      />
     </div>
   );
 }
