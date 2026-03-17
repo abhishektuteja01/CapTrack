@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabase/server';
 import { derivePositions } from '@/lib/domain/portfolio/positions';
-import { fetchYahooPrices, getUsdInrRateCached, toYahooSymbol } from '@/lib/services/prices/yahoo';
+import { fetchYahooPrices, getUsdInrRateCached, toYahooSymbol, type YahooQuote } from '@/lib/services/prices/yahoo';
 import { redirect } from 'next/navigation';
 import { getUser } from '@/lib/supabase/auth';
 import { ensureUserBootstrap } from '@/lib/bootstrap';
@@ -186,7 +186,7 @@ export default async function DashboardPage({
 
     // No longer add USDINR=X here; use FX cache helper later.
 
-    let quotes: any[] = [];
+    let quotes: YahooQuote[] = [];
     let quotesError: string | undefined;
 
     if (quoteInputs.length > 0) {

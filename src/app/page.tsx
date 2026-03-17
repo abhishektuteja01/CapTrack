@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { AuroraBackground } from '@/components/ui/aurora-background';
 
 export default function LandingPage() {
@@ -10,8 +11,8 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <Link href="/" className="flex items-center gap-2 group">
-                <div className="h-8 w-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white font-bold transition-transform group-hover:scale-105">
-                  C
+                <div className="h-8 w-8 relative flex items-center justify-center transition-transform group-hover:scale-105">
+                  <Image src="/icons/icon-192.png" alt="CapTrack Logo" fill className="object-contain" />
                 </div>
                 <span className="text-xl font-bold tracking-tight">CapTrack</span>
               </Link>
@@ -40,7 +41,7 @@ export default function LandingPage() {
               The minimal way to track your <span className="text-zinc-400">capital.</span>
             </h1>
             <p className="text-lg sm:text-xl text-zinc-500 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Beautifully simple portfolio tracking for modern investors. 
+              Beautifully simple portfolio tracking for modern investors.
               No clutter, no distractions, just your growth.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -76,8 +77,8 @@ export default function LandingPage() {
         <footer className="mt-20 border-t border-zinc-100 py-12 px-4 text-center">
           <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 bg-zinc-900 rounded flex items-center justify-center text-white text-xs font-bold">
-                C
+              <div className="h-6 w-6 relative flex items-center justify-center">
+                <Image src="/logo-v2.png" alt="CapTrack Logo" fill className="object-contain" />
               </div>
               <span className="text-sm font-semibold text-zinc-900">CapTrack</span>
             </div>

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Suspense } from 'react';
+import { LoadingProgress } from '@/components/ui/loading-progress';
 import './globals.css';
 
 const geistSans = Geist({
@@ -38,7 +40,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="min-h-dvh bg-white text-zinc-900">{children}</div>
+        <div className="min-h-dvh bg-white text-zinc-900">
+          <Suspense fallback={null}>
+            <LoadingProgress />
+          </Suspense>
+          {children}
+        </div>
       </body>
     </html>
   );

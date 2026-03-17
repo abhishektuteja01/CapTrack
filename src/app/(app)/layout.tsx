@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { LayoutDashboard, ArrowRightLeft } from 'lucide-react';
 
@@ -24,8 +25,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
             {/* Left: Brand */}
             <Link href="/dashboard" className="flex items-center gap-2 group" aria-label="CapTrack">
-              <div className="h-8 w-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white font-bold transition-transform group-hover:scale-105">
-                C
+              <div className="h-8 w-8 relative flex items-center justify-center transition-transform group-hover:scale-105">
+                <Image src="/icons/icon-192.png" alt="CapTrack Logo" fill className="object-contain" />
               </div>
               <span className="text-base font-semibold tracking-tight hidden sm:inline-block">CapTrack</span>
             </Link>
@@ -60,21 +61,21 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </main>
 
         {/* Bottom nav (mobile only) */}
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200/80 bg-white/60 backdrop-blur-lg md:hidden pb-safe">
-          <div className="mx-auto grid max-w-md grid-cols-2 px-6 py-2">
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200/80 bg-white/70 backdrop-blur-xl md:hidden">
+          <div className="mx-auto grid max-w-md grid-cols-2 px-6 pt-2 pb-[env(safe-area-inset-bottom,16px)]">
             <Link
               href="/dashboard"
-              className="flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-center text-zinc-500 hover:bg-zinc-100/50 hover:text-zinc-900 active:scale-95 transition-all"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 text-center text-zinc-500 hover:text-zinc-900 active:scale-95 transition-all"
             >
               <LayoutDashboard className="h-5 w-5" />
-              <span className="text-[10px] font-medium">Dashboard</span>
+              <span className="text-[10px] font-semibold tracking-wide">Dashboard</span>
             </Link>
             <Link
               href="/trades"
-              className="flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-center text-zinc-500 hover:bg-zinc-100/50 hover:text-zinc-900 active:scale-95 transition-all"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 text-center text-zinc-500 hover:text-zinc-900 active:scale-95 transition-all"
             >
               <ArrowRightLeft className="h-5 w-5" />
-              <span className="text-[10px] font-medium">Trades</span>
+              <span className="text-[10px] font-semibold tracking-wide">Trades</span>
             </Link>
           </div>
         </nav>

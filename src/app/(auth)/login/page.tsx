@@ -168,7 +168,7 @@ function LoginInner() {
       </div>
       <div className="bg-zinc-50 px-8 py-4 border-t border-zinc-100 text-center">
         <p className="text-sm text-zinc-500">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-medium text-zinc-900 hover:underline">
             Sign up
           </Link>

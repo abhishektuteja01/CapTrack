@@ -246,7 +246,7 @@ export default async function RecentTrades({
           ))}
           {trades.length === 0 && (
             <div className="p-8 text-center text-sm text-zinc-500">
-              No trades found matching "{searchStr}"
+              No trades found matching &quot;{searchStr}&quot;
             </div>
           )}
         </div>
@@ -321,7 +321,7 @@ export default async function RecentTrades({
                 {trades.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center text-sm text-zinc-500">
-                      No trades found matching "{searchStr}"
+                      No trades found matching &quot;{searchStr}&quot;
                     </td>
                   </tr>
                 )}
