@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { motion, Variants } from 'framer-motion';
@@ -37,10 +37,14 @@ function SignupInner() {
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const isSubmitting = useRef(false);
 
   async function onGoogle() {
+    if (isSubmitting.current) return;
+
     setStatus(null);
     setLoading(true);
+    isSubmitting.current = true;
 
     try {
       const supabase = supabaseBrowser();
@@ -54,14 +58,21 @@ function SignupInner() {
         },
       });
 
-      if (error) setStatus(error.message);
-    } finally {
+      if (error) {
+        setStatus(error.message);
+        isSubmitting.current = false;
+        setLoading(false);
+      }
+    } catch {
+      isSubmitting.current = false;
       setLoading(false);
     }
   }
 
   async function onSignup(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmitting.current) return;
+
     setStatus(null);
 
     if (password.length < 8) {
@@ -75,6 +86,7 @@ function SignupInner() {
     }
 
     setLoading(true);
+    isSubmitting.current = true;
 
     try {
       const supabase = supabaseBrowser();
@@ -94,6 +106,8 @@ function SignupInner() {
 
       if (error) {
         setStatus(error.message);
+        isSubmitting.current = false;
+        setLoading(false);
         return;
       }
 
@@ -101,6 +115,8 @@ function SignupInner() {
         setStatus(
           "This email already has an account (likely created via Google). Please sign in with Google, or use 'Forgot password' to set a password.",
         );
+        isSubmitting.current = false;
+        setLoading(false);
         return;
       }
 
@@ -112,8 +128,12 @@ function SignupInner() {
       if (userData.user) {
         router.replace(next);
         router.refresh();
+      } else {
+        isSubmitting.current = false;
+        setLoading(false);
       }
-    } finally {
+    } catch {
+      isSubmitting.current = false;
       setLoading(false);
     }
   }

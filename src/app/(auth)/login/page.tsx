@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { motion, Variants } from 'framer-motion';
@@ -28,11 +28,15 @@ function LoginInner() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const isSubmitting = useRef(false);
 
   async function onEmailPasswordSignIn(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmitting.current) return;
+
     setErrorMsg(null);
     setLoading(true);
+    isSubmitting.current = true;
 
     try {
       const supabase = supabaseBrowser();
@@ -43,19 +47,25 @@ function LoginInner() {
 
       if (error) {
         setErrorMsg(error.message);
+        isSubmitting.current = false;
+        setLoading(false);
         return;
       }
 
       router.replace(next);
       router.refresh();
-    } finally {
+    } catch {
+      isSubmitting.current = false;
       setLoading(false);
     }
   }
 
   async function onGoogleSignIn() {
+    if (isSubmitting.current) return;
+
     setErrorMsg(null);
     setLoading(true);
+    isSubmitting.current = true;
 
     try {
       const supabase = supabaseBrowser();
@@ -69,8 +79,14 @@ function LoginInner() {
         },
       });
 
-      if (error) setErrorMsg(error.message);
-    } finally {
+      if (error) {
+        setErrorMsg(error.message);
+        isSubmitting.current = false;
+        setLoading(false);
+      }
+      // Redirect happens automatically if successful
+    } catch {
+      isSubmitting.current = false;
       setLoading(false);
     }
   }
