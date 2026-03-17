@@ -56,9 +56,9 @@ export default async function TradesPage({
       <FadeIn>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Trades</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Adding trades into: <span className="font-semibold text-zinc-900 dark:text-zinc-200">{portfolio.name}</span>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Trades</h1>
+            <p className="text-sm text-zinc-600">
+              Adding trades into: <span className="font-semibold text-zinc-900">{portfolio.name}</span>
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export default async function TradesPage({
 
             <Link
               href="/trades/new"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-medium text-white transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 whitespace-nowrap dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="inline-flex h-10 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-medium text-white transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 whitespace-nowrap"
             >
               Add trade
             </Link>

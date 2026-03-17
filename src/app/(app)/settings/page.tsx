@@ -105,8 +105,8 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       <FadeIn>
         <section className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Settings</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Settings</h1>
+          <p className="text-sm text-zinc-600">
             Manage your global preferences and integrations.
           </p>
         </section>
@@ -114,9 +114,9 @@ export default async function SettingsPage() {
 
       <div className="grid gap-6 sm:grid-cols-2">
         {/* Base currency */}
-        <FadeIn delay={0.1} className="rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-white">Base currency</div>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <FadeIn delay={0.1} className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+          <div className="text-sm font-semibold text-zinc-900">Base currency</div>
+          <p className="mt-1 text-xs text-zinc-500">
             Default currency for dashboard totals.
           </p>
 
@@ -125,7 +125,7 @@ export default async function SettingsPage() {
               <select
                 name="baseCurrency"
                 defaultValue={baseCcy}
-                className="h-9 w-[120px] appearance-none rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white dark:focus:border-white dark:focus:bg-black"
+                className="h-9 w-[120px] appearance-none rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white"
               >
                 <option value="USD">USD</option>
                 <option value="INR">INR</option>
@@ -136,21 +136,21 @@ export default async function SettingsPage() {
             </div>
             <button
               type="submit"
-              className="h-9 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="h-9 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95"
             >
               Save
             </button>
           </form>
 
-          <p className="mt-3 text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
-            Current: <span className="font-bold text-zinc-700 dark:text-zinc-300">{baseCcy}</span>
+          <p className="mt-3 text-[10px] text-zinc-400 uppercase tracking-wide">
+            Current: <span className="font-bold text-zinc-700">{baseCcy}</span>
           </p>
         </FadeIn>
 
         {/* Platforms */}
-        <FadeIn delay={0.2} className="rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-white">Trade platforms</div>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <FadeIn delay={0.2} className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+          <div className="text-sm font-semibold text-zinc-900">Trade platforms</div>
+          <p className="mt-1 text-xs text-zinc-500">
             One platform per line. Used in dropdowns/filters.
           </p>
 
@@ -159,12 +159,12 @@ export default async function SettingsPage() {
               name="platforms"
               defaultValue={platformsText}
               rows={5}
-              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white dark:focus:border-white dark:focus:bg-black"
+              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white"
               placeholder={'Manual\nRobinhood\nCoinbase'}
             />
             <button
               type="submit"
-              className="h-9 w-full rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="h-9 w-full rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95"
             >
               Save platforms
             </button>
@@ -174,7 +174,7 @@ export default async function SettingsPage() {
             {platforms.map((p) => (
               <span
                 key={p}
-                className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+                className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600"
               >
                 {p}
               </span>
@@ -182,15 +182,15 @@ export default async function SettingsPage() {
           </div>
         </FadeIn>
 
-        <FadeIn delay={0.3} className="rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl sm:col-span-2 dark:border-zinc-800/60 dark:bg-zinc-900/60">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-white">Imports</div>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <FadeIn delay={0.3} className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl sm:col-span-2">
+          <div className="text-sm font-semibold text-zinc-900">Imports</div>
+          <p className="mt-1 text-sm text-zinc-600">
             Coming soon: import trades from broker apps via CSV or direct integrations.
           </p>
         </FadeIn>
       </div>
 
-      <FadeIn delay={0.4} className="rounded-2xl bg-zinc-50/50 p-4 text-xs text-zinc-500 text-center dark:bg-zinc-900/30 dark:text-zinc-600">
+      <FadeIn delay={0.4} className="rounded-2xl bg-zinc-50/50 p-4 text-xs text-zinc-500 text-center">
         Preferences are synced to your account.
       </FadeIn>
     </div>

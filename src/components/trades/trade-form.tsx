@@ -56,9 +56,9 @@ export default function TradeForm({ portfolioId, editTrade, platforms }: Props) 
     return state && 'fieldErrors' in state ? state.fieldErrors?.[name] : undefined;
   };
 
-  const inputClass = "w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm transition-all outline-none focus:border-zinc-900 focus:bg-white focus:ring-1 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white dark:focus:border-white dark:focus:bg-black dark:focus:ring-white";
-  const labelClass = "text-xs font-medium text-zinc-500 uppercase tracking-wide dark:text-zinc-400";
-  const errorClass = "text-xs text-rose-600 mt-1 dark:text-rose-400";
+  const inputClass = "w-full rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-sm transition-all outline-none focus:border-zinc-900 focus:bg-white focus:ring-1 focus:ring-zinc-900";
+  const labelClass = "text-xs font-medium text-zinc-500 uppercase tracking-wide";
+  const errorClass = "text-xs text-rose-600 mt-1";
 
   return (
     <FadeIn delay={0.1} className="w-full max-w-2xl mx-auto">
@@ -225,10 +225,10 @@ export default function TradeForm({ portfolioId, editTrade, platforms }: Props) 
               value={currency}
               readOnly
               aria-readonly="true"
-              className={`${inputClass} bg-zinc-100 text-zinc-500 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-500`}
+              className={`${inputClass} bg-zinc-100 text-zinc-500 cursor-not-allowed`}
             />
             <input type="hidden" name="currency" value={currency} />
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-500">Auto-filled based on symbol.</p>
+            <p className="text-[10px] text-zinc-500">Auto-filled based on symbol.</p>
             {fieldErr('currency')?.map((e) => <div key={e} className={errorClass}>{e}</div>)}
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function TradeForm({ portfolioId, editTrade, platforms }: Props) 
           {editTrade ? (
             <a
               href="/trades"
-              className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors dark:text-zinc-400 dark:hover:text-white"
+              className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
             >
               Cancel
             </a>
@@ -259,14 +259,14 @@ export default function TradeForm({ portfolioId, editTrade, platforms }: Props) 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-zinc-900/10 hover:bg-zinc-800 hover:shadow-zinc-900/20 active:scale-95 transition-all dark:bg-white dark:text-black dark:shadow-white/10 dark:hover:bg-zinc-200"
+            className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-zinc-900/10 hover:bg-zinc-800 hover:shadow-zinc-900/20 active:scale-95 transition-all"
           >
             {editTrade ? 'Save Changes' : 'Add Trade'}
           </motion.button>
         </div>
 
         {state?.message ? (
-          <div className={`rounded-xl px-4 py-3 text-sm ${state.ok ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-rose-50 text-rose-800 dark:bg-rose-900/20 dark:text-rose-400'}`}>
+          <div className={`rounded-xl px-4 py-3 text-sm ${state.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}>
             {state.message}
           </div>
         ) : null}

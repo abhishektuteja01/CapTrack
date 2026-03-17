@@ -123,19 +123,19 @@ function SignupInner() {
       initial="hidden"
       animate="visible"
       variants={fadeInUp}
-      className="w-full bg-white/50 backdrop-blur-xl border border-zinc-200/50 rounded-2xl shadow-xl overflow-hidden dark:bg-zinc-900/50 dark:border-zinc-800/50"
+      className="w-full bg-white/70 backdrop-blur-xl border border-zinc-200/50 rounded-2xl shadow-xl overflow-hidden"
     >
-      <div className="p-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Create an account</h1>
-          <p className="text-sm text-zinc-500 mt-2 dark:text-zinc-400">Join CapTrack to start tracking your portfolio</p>
+      <div className="p-6 sm:p-8">
+        <div className="mb-6 text-center">
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Create an account</h1>
+          <p className="text-xs text-zinc-500 mt-1">Join CapTrack to start tracking your portfolio</p>
         </div>
 
         <button
           type="button"
           onClick={onGoogle}
           disabled={loading}
-          className="relative w-full inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50 hover:border-zinc-300 transition-all disabled:opacity-60 dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800"
+          className="relative w-full inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50 hover:border-zinc-300 transition-all disabled:opacity-60"
         >
           {loading ? (<Loader2 className="mr-2 h-4 w-4 animate-spin" />) : (
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -149,39 +149,39 @@ function SignupInner() {
         </button>
 
         <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-px flex-1 bg-zinc-100" />
           <span className="text-xs text-zinc-400 font-medium">OR EMAIL</span>
-          <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-px flex-1 bg-zinc-100" />
         </div>
 
         <form onSubmit={onSignup} className="space-y-4">
           <div>
-            <label className="text-xs font-medium text-zinc-700 ml-1 dark:text-zinc-300">Display name</label>
+            <label className="text-xs font-medium text-zinc-700 ml-1">Display name</label>
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               type="text"
               autoComplete="name"
               placeholder="Abhishek"
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 dark:focus:border-white dark:focus:ring-white dark:placeholder:text-zinc-600 dark:text-white"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 text-zinc-900"
               required
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-zinc-700 ml-1 dark:text-zinc-300">Phone (optional)</label>
+            <label className="text-xs font-medium text-zinc-700 ml-1">Phone (optional)</label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               type="tel"
               autoComplete="tel"
               placeholder="+1 555 123 4567"
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 dark:focus:border-white dark:focus:ring-white dark:placeholder:text-zinc-600 dark:text-white"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 text-zinc-900"
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-zinc-700 ml-1 dark:text-zinc-300">Email address</label>
+            <label className="text-xs font-medium text-zinc-700 ml-1">Email address</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -189,40 +189,40 @@ function SignupInner() {
               autoComplete="email"
               inputMode="email"
               placeholder="you@example.com"
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 dark:focus:border-white dark:focus:ring-white dark:placeholder:text-zinc-600 dark:text-white"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 text-zinc-900"
               required
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-zinc-700 ml-1 dark:text-zinc-300">Password</label>
+            <label className="text-xs font-medium text-zinc-700 ml-1">Password</label>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               autoComplete="new-password"
               placeholder="••••••••"
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 dark:focus:border-white dark:focus:ring-white dark:placeholder:text-zinc-600 dark:text-white"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 text-zinc-900"
               required
             />
             <p className="mt-1 text-[10px] text-zinc-500 ml-1">Minimum 8 characters</p>
           </div>
 
           <div>
-            <label className="text-xs font-medium text-zinc-700 ml-1 dark:text-zinc-300">Confirm password</label>
+            <label className="text-xs font-medium text-zinc-700 ml-1">Confirm password</label>
             <input
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               type="password"
               autoComplete="new-password"
               placeholder="••••••••"
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 dark:focus:border-white dark:focus:ring-white dark:placeholder:text-zinc-600 dark:text-white"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 placeholder:text-zinc-400 text-zinc-900"
               required
             />
           </div>
 
           {status ? (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-800 border border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-800 border border-zinc-200">
               {status}
             </motion.div>
           ) : null}
@@ -230,7 +230,7 @@ function SignupInner() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="w-full rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="flex items-center justify-center gap-2">
@@ -244,10 +244,10 @@ function SignupInner() {
         </form>
       </div>
 
-      <div className="bg-zinc-50 px-8 py-4 border-t border-zinc-100 text-center dark:bg-zinc-800/50 dark:border-zinc-800">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="bg-zinc-50 px-8 py-4 border-t border-zinc-100 text-center">
+        <p className="text-sm text-zinc-500">
           Already have an account?{' '}
-          <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-medium text-zinc-900 hover:underline dark:text-white">
+          <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-medium text-zinc-900 hover:underline">
             Sign in
           </Link>
         </p>

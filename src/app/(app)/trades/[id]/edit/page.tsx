@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import TradeForm from '@/components/trades/trade-form';
+import { FadeIn } from '@/components/ui/fade-in';
 import { supabaseServer } from '@/lib/supabase/server';
 
 function normalizePlatforms(raw: string[] | null | undefined): string[] {
@@ -111,43 +112,47 @@ export default async function EditTradePage({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Edit trade</h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            {portfolio ? (
-              <>
-                Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span> in{' '}
-                <span className="font-semibold text-zinc-900">{portfolio.name}</span>
-              </>
-            ) : (
-              <>
-                Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span>
-              </>
-            )}
-          </p>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <FadeIn>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Edit Trade</h1>
+            <p className="text-sm text-zinc-600">
+              {portfolio ? (
+                <>
+                  Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span> in{' '}
+                  <span className="font-semibold text-zinc-900">{portfolio.name}</span>
+                </>
+              ) : (
+                <>
+                  Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span>
+                </>
+              )}
+            </p>
+          </div>
+
+          <Link
+            href="/trades"
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+          >
+            Cancel
+          </Link>
         </div>
+      </FadeIn>
 
-        <Link
-          href="/trades"
-          className="inline-flex h-10 items-center justify-center rounded-md border-2 border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-        >
-          Back
-        </Link>
-      </div>
-
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 md:border-0 md:rounded-none md:p-0">
-        <div className="mb-3 flex items-center justify-between md:px-0">
-          <h2 className="text-sm font-semibold text-zinc-900">Trade details</h2>
-          <p className="text-xs text-zinc-500">Saved to Supabase</p>
+      <FadeIn delay={0.1} className="relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+        <div className="mb-6 flex items-center justify-between border-b border-zinc-100 pb-4">
+          <h2 className="text-sm font-semibold text-zinc-900">Trade Details</h2>
+          <p className="text-[10px] uppercase tracking-wider font-medium text-zinc-400">Secure Edit</p>
         </div>
         <TradeForm portfolioId={t.portfolio_id} editTrade={editTrade} platforms={platforms} />
-      </section>
+      </FadeIn>
 
-      <p className="text-xs text-zinc-500">
-        Tip: update Platforms in <Link href="/settings" className="underline">Settings</Link>.
-      </p>
+      <FadeIn delay={0.2} className="text-center">
+        <p className="text-xs text-zinc-400">
+          Tip: update Platforms in <Link href="/settings" className="underline hover:text-zinc-900">Settings</Link>.
+        </p>
+      </FadeIn>
     </div>
   );
 }

@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Aurora Colors */
+  --white: #ffffff;
+  --black: #000000;
+  --transparent: transparent;
+  --blue-500: #3b82f6;
+  --indigo-300: #a5b4fc;
+  --blue-300: #93c5fd;
+  --violet-200: #ddd6fe;
+  --blue-400: #60a5fa;
 }
 
 @theme inline {
@@ -10,13 +20,23 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Aurora Animation */
+  @keyframes aurora {
+    from {
+      background-position: 50% 50%, 50% 50%;
+    }
+    to {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
+  --animate-aurora: aurora 60s linear infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Force light theme by ignoring dark mode preferences */
+:root {
+  --background: #ffffff !important;
+  --foreground: #171717 !important;
 }
 
 body {
@@ -26,7 +46,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Minimal UX polish (keeps the black/white aesthetic) */
+/* Minimal UX polish */
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -42,7 +62,7 @@ html {
   outline-offset: 2px;
 }
 
-/* Custom Scrollbar for a cleaner look */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -58,13 +78,4 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #d4d4d8;
-}
-
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
-    background: #27272a;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #3f3f46;
-  }
 }

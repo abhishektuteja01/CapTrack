@@ -47,8 +47,8 @@ function platformLabel(p: string | null | undefined) {
 
 function sideBadgeClass(side: 'BUY' | 'SELL') {
   return side === 'BUY'
-    ? 'rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-    : 'rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-900/20 dark:text-rose-400';
+    ? 'rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700'
+    : 'rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700';
 }
 
 type SortField = 'date' | 'asset' | 'qty' | 'price';
@@ -84,7 +84,7 @@ function SortHeader({
   }).toString()}`;
 
   return (
-    <Link href={href} className="group inline-flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-200">
+    <Link href={href} className="group inline-flex items-center gap-1 hover:text-zinc-900">
       {label}
       <span className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
         {isActive && currentSort.order === 'asc' ? (
@@ -147,11 +147,11 @@ export default async function RecentTrades({
 
   const { data, count, error } = await query.range(from, to);
 
-  if (error) {
+    if (error) {
     return (
-      <FadeIn className="mt-8 bg-white/50 p-6 border border-zinc-200/50 rounded-2xl backdrop-blur-sm dark:bg-zinc-900/50 dark:border-zinc-800/50">
-        <div className="text-sm font-semibold text-zinc-900 dark:text-white">Recent trades</div>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Failed to load trades: {error.message}</p>
+      <FadeIn className="mt-8 bg-white/70 p-6 border border-zinc-200/50 rounded-2xl backdrop-blur-sm">
+        <div className="text-sm font-semibold text-zinc-900">Recent trades</div>
+        <p className="mt-1 text-sm text-zinc-600">Failed to load trades: {error.message}</p>
       </FadeIn>
     );
   }
@@ -160,12 +160,12 @@ export default async function RecentTrades({
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  if (trades.length === 0 && !searchStr) {
+    if (trades.length === 0 && !searchStr) {
     return (
-      <FadeIn className="mt-8 text-center bg-white/50 p-12 border border-zinc-200/50 rounded-3xl backdrop-blur-sm dark:bg-zinc-900/50 dark:border-zinc-800/50">
-        <div className="text-sm font-semibold text-zinc-900 dark:text-white">No trades yet</div>
-        <p className="mt-1 text-sm text-zinc-500 max-w-sm mx-auto dark:text-zinc-400">Your portfolio is empty. Add your first trade to start tracking your performance.</p>
-        <Link href="/trades/new" className="mt-4 inline-flex items-center justify-center rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
+      <FadeIn className="mt-8 text-center bg-white/70 p-12 border border-zinc-200/50 rounded-3xl backdrop-blur-sm">
+        <div className="text-sm font-semibold text-zinc-900">No trades yet</div>
+        <p className="mt-1 text-sm text-zinc-500 max-w-sm mx-auto">Your portfolio is empty. Add your first trade to start tracking your performance.</p>
+        <Link href="/trades/new" className="mt-4 inline-flex items-center justify-center rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-800">
           Add Trade
         </Link>
       </FadeIn>
@@ -176,55 +176,55 @@ export default async function RecentTrades({
     <FadeIn delay={0.2} className="mt-8 w-full">
       <div className="flex items-end justify-between px-2 py-3 mb-2">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">Recent trades</h2>
-          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+          <h2 className="text-lg font-bold tracking-tight text-zinc-900">Recent trades</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">
             {searchStr ? `Searching for "${searchStr}"` : 'Your latest activity (most recent first)'}
           </p>
         </div>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+        <span className="text-xs text-zinc-500">
           {total === 0 ? 'No results' : `Page ${safePage} of ${totalPages}`}
         </span>
       </div>
 
-      <div className="rounded-3xl border border-zinc-200/60 bg-white/60 shadow-sm backdrop-blur-xl overflow-hidden dark:border-zinc-800/60 dark:bg-zinc-900/60">
+      <div className="rounded-3xl border border-zinc-200/60 bg-white/70 shadow-sm backdrop-blur-xl overflow-hidden">
         {/* Mobile-first cards */}
-        <div className="grid divide-y divide-zinc-200/50 md:hidden dark:divide-zinc-800/50">
+        <div className="grid divide-y divide-zinc-200/50 md:hidden">
           {trades.map((t) => (
-            <div key={t.id} className="p-4 transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
+            <div key={t.id} className="p-4 transition-colors hover:bg-zinc-100/50">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">{t.asset_symbol}</div>
-                  <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] uppercase font-bold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                  <div className="text-base font-bold tracking-tight text-zinc-900">{t.asset_symbol}</div>
+                  <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] uppercase font-bold text-zinc-500">
                     {t.asset_type}
                   </span>
                 </div>
                 <span className={sideBadgeClass(t.side)}>{t.side}</span>
               </div>
-              <div className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-400">
+              <div className="mt-1 text-[11px] text-zinc-400">
                 {platformLabel(t.platform)} · {fmtDate(t.occurred_at)}
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                 <div>
                   <div className="text-[10px] text-zinc-400 uppercase tracking-wide">Qty</div>
-                  <div className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">{fmtNumber(t.quantity)}</div>
+                  <div className="font-medium tabular-nums text-zinc-700">{fmtNumber(t.quantity)}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-zinc-400 uppercase tracking-wide">Price</div>
-                  <div className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMoney(t.price, t.currency)}</div>
+                  <div className="font-medium tabular-nums text-zinc-700">{fmtMoney(t.price, t.currency)}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-zinc-400 uppercase tracking-wide">Fees</div>
-                  <div className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMoney(t.fees, t.currency)}</div>
+                  <div className="font-medium tabular-nums text-zinc-700">{fmtMoney(t.fees, t.currency)}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-zinc-400 uppercase tracking-wide">Currency</div>
-                  <div className="font-medium text-zinc-700 dark:text-zinc-300">{t.currency}</div>
+                  <div className="font-medium text-zinc-700">{t.currency}</div>
                 </div>
               </div>
 
               {t.notes ? (
-                <div className="mt-3 border-t border-zinc-100 pt-2 text-xs text-zinc-500 italic dark:border-zinc-800 dark:text-zinc-400">
+                <div className="mt-3 border-t border-zinc-100 pt-2 text-xs text-zinc-500 italic">
                   {t.notes}
                 </div>
               ) : null}
@@ -232,20 +232,20 @@ export default async function RecentTrades({
               <div className="mt-3 flex items-center justify-end gap-4 pt-2">
                 <Link
                   href={`/trades/${t.id}/edit`}
-                  className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                  className="text-xs font-medium text-zinc-500 hover:text-zinc-900"
                 >
                   Edit
                 </Link>
                 <DeleteTradeButton
                   tradeId={t.id}
                   portfolioId={portfolioId}
-                  className="text-xs font-medium text-rose-600 hover:text-rose-700 dark:text-rose-500 dark:hover:text-rose-400"
+                  className="text-xs font-medium text-rose-600 hover:text-rose-700"
                 />
               </div>
             </div>
           ))}
           {trades.length === 0 && (
-            <div className="p-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="p-8 text-center text-sm text-zinc-500">
               No trades found matching "{searchStr}"
             </div>
           )}
@@ -255,7 +255,7 @@ export default async function RecentTrades({
         <div className="hidden md:block">
           <div className="w-full overflow-x-auto">
             <table className="w-full min-w-max table-auto text-sm">
-              <thead className="bg-zinc-50/50 text-xs font-medium text-zinc-500 uppercase tracking-wider dark:bg-zinc-800/30 dark:text-zinc-400">
+              <thead className="bg-zinc-50/50 text-xs font-medium text-zinc-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <SortHeader label="Date" field="date" currentSort={{ field, order }} search={search} />
@@ -276,43 +276,43 @@ export default async function RecentTrades({
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200/50 dark:divide-zinc-800/50">
+              <tbody className="divide-y divide-zinc-200/50">
                 {trades.map((t) => (
                   <tr
                     key={t.id}
-                    className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20"
+                    className="transition-colors hover:bg-zinc-100/50"
                   >
-                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400">{fmtDate(t.occurred_at)}</td>
+                    <td className="px-6 py-4 text-zinc-600">{fmtDate(t.occurred_at)}</td>
                     <td className="px-6 py-4">
-                      <div className="font-bold text-zinc-900 dark:text-white">{t.asset_symbol}</div>
-                      <div className="text-[10px] font-medium uppercase text-zinc-400 tracking-wide dark:text-zinc-400">{t.asset_type}</div>
+                      <div className="font-bold text-zinc-900">{t.asset_symbol}</div>
+                      <div className="text-[10px] font-medium uppercase text-zinc-400 tracking-wide">{t.asset_type}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                      <span className="inline-flex rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-600">
                         {platformLabel(t.platform)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={sideBadgeClass(t.side)}>{t.side}</span>
                     </td>
-                    <td className="px-6 py-4 text-right tabular-nums text-zinc-700 dark:text-zinc-300">{fmtNumber(t.quantity)}</td>
-                    <td className="px-6 py-4 text-right tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMoney(t.price, t.currency)}</td>
-                    <td className="px-6 py-4 text-right tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMoney(t.fees, t.currency)}</td>
-                    <td className="px-6 py-4 text-zinc-500 max-w-xs truncate dark:text-zinc-400">
+                    <td className="px-6 py-4 text-right tabular-nums text-zinc-700">{fmtNumber(t.quantity)}</td>
+                    <td className="px-6 py-4 text-right tabular-nums text-zinc-700">{fmtMoney(t.price, t.currency)}</td>
+                    <td className="px-6 py-4 text-right tabular-nums text-zinc-700">{fmtMoney(t.fees, t.currency)}</td>
+                    <td className="px-6 py-4 text-zinc-500 max-w-xs truncate">
                       {t.notes}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-3">
                         <Link
                           href={`/trades/${t.id}/edit`}
-                          className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                          className="text-xs font-medium text-zinc-500 hover:text-zinc-900"
                         >
                           Edit
                         </Link>
                         <DeleteTradeButton
                           tradeId={t.id}
                           portfolioId={portfolioId}
-                          className="text-xs font-medium text-rose-600 hover:text-rose-700 dark:text-rose-500 dark:hover:text-rose-400"
+                          className="text-xs font-medium text-rose-600 hover:text-rose-700"
                         />
                       </div>
                     </td>
@@ -320,7 +320,7 @@ export default async function RecentTrades({
                 ))}
                 {trades.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    <td colSpan={9} className="px-6 py-12 text-center text-sm text-zinc-500">
                       No trades found matching "{searchStr}"
                     </td>
                   </tr>
@@ -343,14 +343,14 @@ export default async function RecentTrades({
           }}
           aria-disabled={safePage <= 1}
           className={`inline-flex h-9 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors ${safePage <= 1
-            ? 'border-zinc-100 bg-zinc-50 text-zinc-300 cursor-not-allowed pointer-events-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-700'
-            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            ? 'border-zinc-100 bg-zinc-50 text-zinc-300 cursor-not-allowed pointer-events-none'
+            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300'
             }`}
         >
           Previous
         </Link>
 
-        <div className="text-xs font-medium text-zinc-500 tabular-nums dark:text-zinc-400">
+        <div className="text-xs font-medium text-zinc-500 tabular-nums">
           {total === 0 ? '0 trades' : `${from + 1}-${Math.min(to + 1, total)} of ${total}`}
         </div>
 
@@ -365,8 +365,8 @@ export default async function RecentTrades({
           }}
           aria-disabled={safePage >= totalPages}
           className={`inline-flex h-9 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors ${safePage >= totalPages
-            ? 'border-zinc-100 bg-zinc-50 text-zinc-300 cursor-not-allowed pointer-events-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-700'
-            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            ? 'border-zinc-100 bg-zinc-50 text-zinc-300 cursor-not-allowed pointer-events-none'
+            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300'
             }`}
         >
           Next

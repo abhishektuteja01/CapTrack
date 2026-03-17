@@ -68,25 +68,25 @@ export default async function NewTradePage() {
       <FadeIn>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Add Trade</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Adding to <span className="font-semibold text-zinc-900 dark:text-zinc-200">{portfolio.name}</span>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Add Trade</h1>
+            <p className="text-sm text-zinc-600">
+              Adding to <span className="font-semibold text-zinc-900">{portfolio.name}</span>
             </p>
           </div>
 
           <Link
             href="/trades"
-            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors dark:text-zinc-400 dark:hover:text-white"
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
           >
             Cancel
           </Link>
         </div>
       </FadeIn>
 
-      <FadeIn delay={0.1} className="relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
-        <div className="mb-6 flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Transaction Details</h2>
-          <div className="text-[10px] uppercase tracking-wider font-medium text-zinc-400 dark:text-zinc-500">
+      <FadeIn delay={0.1} className="relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+        <div className="mb-6 flex items-center justify-between border-b border-zinc-100 pb-4">
+          <h2 className="text-sm font-semibold text-zinc-900">Transaction Details</h2>
+          <div className="text-[10px] uppercase tracking-wider font-medium text-zinc-400">
             Secure Entry
           </div>
         </div>
@@ -95,8 +95,8 @@ export default async function NewTradePage() {
       </FadeIn>
 
       <FadeIn delay={0.2} className="text-center">
-        <p className="text-xs text-zinc-400 dark:text-zinc-500">
-          Tip: You can manage your trading platforms in <Link href="/settings" className="underline hover:text-zinc-900 dark:hover:text-zinc-300">Settings</Link>.
+        <p className="text-xs text-zinc-400">
+          Tip: You can manage your trading platforms in <Link href="/settings" className="underline hover:text-zinc-900">Settings</Link>.
         </p>
       </FadeIn>
     </div>

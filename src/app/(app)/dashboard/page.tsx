@@ -325,8 +325,8 @@ export default async function DashboardPage({
       <div className="space-y-6">
         <FadeIn className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Dashboard</h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Dashboard</h1>
+            <p className="text-sm text-zinc-500">
               {portfolio.name} • {enriched.length} assets
             </p>
           </div>
@@ -336,7 +336,7 @@ export default async function DashboardPage({
               type="submit"
               aria-label="Refresh prices"
               title="Refresh prices"
-              className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-900 shadow-sm transition-all hover:bg-zinc-50 hover:border-zinc-300 hover:scale-105 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:border-zinc-700"
+              className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white/80 text-zinc-900 shadow-sm transition-all hover:bg-zinc-50 hover:border-zinc-300 hover:scale-105 active:scale-95"
             >
               <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180" />
             </button>
@@ -347,8 +347,8 @@ export default async function DashboardPage({
           <Link
             href="/dashboard"
             className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${!platformFilter
-              ? 'bg-zinc-900 text-white shadow-md dark:bg-white dark:text-black'
-              : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800'
+              ? 'bg-zinc-900 text-white shadow-md'
+              : 'bg-white/80 border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
               }`}
           >
             All
@@ -358,8 +358,8 @@ export default async function DashboardPage({
               key={p}
               href={`/dashboard?platform=${encodeURIComponent(p)}`}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${platformFilter === p
-                ? 'bg-zinc-900 text-white shadow-md dark:bg-white dark:text-black'
-                : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                ? 'bg-zinc-900 text-white shadow-md'
+                : 'bg-white/80 border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
                 }`}
             >
               {p}
@@ -368,14 +368,14 @@ export default async function DashboardPage({
         </FadeIn>
 
         {quotesError ? (
-          <FadeIn delay={0.15} className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-xs text-amber-800 backdrop-blur-sm dark:border-amber-900/30 dark:bg-amber-900/10 dark:text-amber-400">
+          <FadeIn delay={0.15} className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-xs text-amber-800 backdrop-blur-sm">
             Live quotes unavailable right now — showing positions without LTP. ({quotesError})
           </FadeIn>
         ) : null}
 
         {hasMixedCurrencies ? (
-          <FadeIn delay={0.15} className="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-4 text-xs text-zinc-600 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400">
-            Totals are converted to <span className="font-semibold text-zinc-900 dark:text-zinc-200">{BASE_CCY}</span>
+          <FadeIn delay={0.15} className="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-4 text-xs text-zinc-600 backdrop-blur-sm">
+            Totals are converted to <span className="font-semibold text-zinc-900">{BASE_CCY}</span>
             {typeof fxUsdInr === 'number' && fxUsdInr > 0 ? (
               <> using <span className="font-mono">USDINR=X</span> @ {fxUsdInr.toFixed(4)}.</>
             ) : (
@@ -385,26 +385,26 @@ export default async function DashboardPage({
         ) : null}
 
         {/* Summary block */}
-        <FadeIn delay={0.2} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
+        <FadeIn delay={0.2} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Invested</div>
-              <div className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums text-zinc-900 dark:text-white">
+              <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Invested</div>
+              <div className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums text-zinc-900">
                 {fxReady ? fmtMoney(totalsBase.costBasis) : '—'}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Current Value</div>
-              <div className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums text-zinc-900 dark:text-white">
+              <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Current Value</div>
+              <div className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums text-zinc-900">
                 {fxReady ? fmtMoney(totalsBase.marketValue) : '—'}
               </div>
             </div>
           </div>
 
-          <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-zinc-200 to-transparent dark:via-zinc-800" />
+          <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
 
           <div className="flex items-center justify-between gap-4">
-            <div className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total P&amp;L</div>
+            <div className="text-sm font-medium text-zinc-600">Total P&amp;L</div>
             <div className="flex items-center gap-3">
               <div className={`text-xl font-bold tabular-nums ${pnlClass(fxReady ? totalsBase.unrealized : undefined)}`}>
                 {fxReady && totalsBase.unrealized >= 0 ? '+' : ''}
@@ -416,7 +416,7 @@ export default async function DashboardPage({
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-4">
-            <div className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Today&apos;s P&amp;L</div>
+            <div className="text-sm font-medium text-zinc-600">Today&apos;s P&amp;L</div>
             <div className="flex items-center gap-3">
               <div className={`text-lg font-bold tabular-nums ${pnlClass(fxReady ? dayTotalsBase.dayPnl : undefined)}`}>
                 {fxReady && dayTotalsBase.dayPnl >= 0 ? '+' : ''}
@@ -430,31 +430,31 @@ export default async function DashboardPage({
         </FadeIn>
 
         {/* Positions list */}
-        <FadeIn delay={0.3} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/60 shadow-sm backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/60">
+        <FadeIn delay={0.3} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 shadow-sm backdrop-blur-xl">
           {enriched.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">No positions found.</p>
-              <Link href="/trades/new" className="mt-4 inline-flex items-center justify-center rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
+              <p className="text-sm text-zinc-500">No positions found.</p>
+              <Link href="/trades/new" className="mt-4 inline-flex items-center justify-center rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-800">
                 Add your first trade
               </Link>
             </div>
           ) : (
-            <ul className="divide-y divide-zinc-200/50 dark:divide-zinc-800/50">
+            <ul className="divide-y divide-zinc-200/50">
               {enriched.map((p) => {
                 return (
-                  <li key={`${p.asset.type}:${p.asset.symbol}`} className="p-4 transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
+                  <li key={`${p.asset.type}:${p.asset.symbol}`} className="p-4 transition-colors hover:bg-zinc-100/50">
                     <div className="flex items-start justify-between gap-4">
                       {/* Left side */}
                       <div className="min-w-0">
-                        <div className="text-[11px] font-medium text-zinc-500 uppercase tracking-wide dark:text-zinc-400">
+                        <div className="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">
                           {p.asset.type}
                         </div>
-                        <div className="mt-0.5 text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+                        <div className="mt-0.5 text-lg font-bold tracking-tight text-zinc-900">
                           {p.asset.symbol}
                         </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                        <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
                           <span>{fmtQty(p.quantity)} units</span>
-                          <span className="h-1 w-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+                          <span className="h-1 w-1 rounded-full bg-zinc-300"></span>
                           <span>Avg {fmtMoney(p.avgCost, p.liveCurrency ?? p.currency)}</span>
                         </div>
                       </div>
@@ -474,7 +474,7 @@ export default async function DashboardPage({
                             '—'
                           )}
                         </div>
-                        <div className="mt-1 text-xs text-zinc-400 tabular-nums dark:text-zinc-400">
+                        <div className="mt-1 text-xs text-zinc-400 tabular-nums">
                           LTP {typeof p.livePrice === 'number'
                             ? fmtMoney(p.livePrice, p.liveCurrency ?? p.currency)
                             : '—'}
@@ -491,7 +491,7 @@ export default async function DashboardPage({
         {/* Sticky day P&L bar (mobile) */}
         {enriched.length > 0 ? (
           <FadeIn delay={0.5} className="fixed left-0 right-0 bottom-24 z-40 px-4 sm:hidden pointer-events-none">
-            <div className="rounded-2xl border border-zinc-200/80 bg-white/90 backdrop-blur-xl px-4 py-3 shadow-lg dark:border-zinc-800/80 dark:bg-zinc-900/90 pointer-events-auto">
+            <div className="rounded-2xl border border-zinc-200/80 bg-white/90 backdrop-blur-xl px-4 py-3 shadow-lg pointer-events-auto">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Today</div>
                 <div className="flex items-center gap-2">

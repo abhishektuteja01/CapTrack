@@ -41,9 +41,9 @@ export default function TradeFilters() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Search symbol..."
-          className="peer block w-full rounded-full border border-zinc-200 bg-white py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white dark:focus:border-zinc-700"
+          className="peer block w-full rounded-full border border-zinc-200 bg-white/80 py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
         />
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 peer-focus:text-zinc-900 dark:peer-focus:text-zinc-200">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 peer-focus:text-zinc-900">
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

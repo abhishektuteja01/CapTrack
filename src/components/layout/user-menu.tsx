@@ -38,7 +38,7 @@ export default function UserMenu({ user }: UserMenuProps) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="rounded-full px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors dark:text-zinc-200 dark:hover:bg-zinc-800"
+        className="rounded-full px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors"
         aria-haspopup="menu"
         aria-expanded={open}
       >

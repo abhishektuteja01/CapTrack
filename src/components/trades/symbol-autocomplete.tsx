@@ -78,15 +78,15 @@ export default function SymbolAutocomplete({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Start typing a symbol (AAPL, BTC, SPY…)"
-        className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-zinc-900 focus:bg-white focus:ring-1 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:bg-black dark:focus:ring-white"
+        className="w-full rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-zinc-900 focus:bg-white focus:ring-1 focus:ring-zinc-900"
         onFocus={() => results.length && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
 
       {open && (loading || results.length > 0) ? (
-        <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg ring-1 ring-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 dark:ring-zinc-800">
+        <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white/95 shadow-lg ring-1 ring-zinc-200 backdrop-blur-xl">
           {loading ? (
-            <div className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">Searching…</div>
+            <div className="px-4 py-3 text-xs text-zinc-500">Searching…</div>
           ) : (
             results.map((r) => (
               <button
@@ -99,13 +99,13 @@ export default function SymbolAutocomplete({
                   setQuery(r.symbol);
                   onSelect(r);
                 }}
-                className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-100/50"
               >
                 <div>
-                  <div className="font-semibold text-zinc-900 dark:text-white">{r.symbol}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">{r.name}</div>
+                  <div className="font-semibold text-zinc-900">{r.symbol}</div>
+                  <div className="text-xs text-zinc-500">{r.name}</div>
                 </div>
-                <div className="text-right text-xs text-zinc-400 dark:text-zinc-500">
+                <div className="text-right text-xs text-zinc-400">
                   <div className="uppercase tracking-wider">{r.type}</div>
                   {r.exchange ? <div>{r.exchange}</div> : null}
                 </div>
