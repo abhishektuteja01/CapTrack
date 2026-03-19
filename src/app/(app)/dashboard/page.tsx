@@ -286,9 +286,11 @@ export default async function DashboardPage({
 
     const totalsBase = enriched.reduce(
       (acc, p) => {
-        if (typeof p.marketValueBase === 'number') acc.marketValue += p.marketValueBase;
-        if (typeof p.costBasisBase === 'number') acc.costBasis += p.costBasisBase;
-        if (typeof p.unrealizedBase === 'number') acc.unrealized += p.unrealizedBase;
+        if (typeof p.marketValueBase === 'number') {
+          acc.marketValue += p.marketValueBase;
+          if (typeof p.costBasisBase === 'number') acc.costBasis += p.costBasisBase;
+          if (typeof p.unrealizedBase === 'number') acc.unrealized += p.unrealizedBase;
+        }
         return acc;
       },
       { marketValue: 0, costBasis: 0, unrealized: 0 }
@@ -385,7 +387,7 @@ export default async function DashboardPage({
         ) : null}
 
         {/* Summary block */}
-        <FadeIn delay={0.2} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+        <FadeIn key={`summary-${platformFilter ?? 'all'}`} delay={0.2} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
           <div className="grid grid-cols-2 gap-8">
             <div>
               <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Invested</div>
@@ -430,7 +432,7 @@ export default async function DashboardPage({
         </FadeIn>
 
         {/* Positions list */}
-        <FadeIn delay={0.3} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 shadow-sm backdrop-blur-xl">
+        <FadeIn key={`positions-${platformFilter ?? 'all'}`} delay={0.3} className="overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 shadow-sm backdrop-blur-xl">
           {enriched.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-sm text-zinc-500">No positions found.</p>
