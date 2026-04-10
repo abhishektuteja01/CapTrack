@@ -4,11 +4,9 @@ import { deleteTradeAction } from '@/app/(app)/trades/actions';
 
 export default function DeleteTradeButton({
   tradeId,
-  portfolioId,
   className,
 }: {
   tradeId: string;
-  portfolioId: string;
   className?: string;
 }) {
   return (
@@ -21,7 +19,6 @@ export default function DeleteTradeButton({
       }}
     >
       <input type="hidden" name="tradeId" value={tradeId} />
-      <input type="hidden" name="portfolioId" value={portfolioId} />
       <button
         type="submit"
         className={`inline-flex items-center leading-none ${className ?? ''}`.trim()}

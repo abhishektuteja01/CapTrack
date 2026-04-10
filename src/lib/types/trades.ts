@@ -41,7 +41,6 @@ export interface AssetRef {
  */
 export interface Trade {
   id: string; // uuid
-  portfolioId: string; // keep even if single-user for now (future-proof)
   occurredAt: string; // ISO timestamp, e.g. '2025-12-29T18:05:00.000Z'
 
   asset: AssetRef;

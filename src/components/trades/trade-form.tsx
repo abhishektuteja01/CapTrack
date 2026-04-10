@@ -15,7 +15,6 @@ const nowDateTimeLocal = () => {
 };
 
 type Props = {
-  portfolioId: string;
   platforms: string[];
   editTrade?: {
     id: string;
@@ -37,7 +36,7 @@ type ActionState =
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
   | undefined;
 
-export default function TradeForm({ portfolioId, editTrade, platforms }: Props) {
+export default function TradeForm({ editTrade, platforms }: Props) {
   const [state, formAction] = React.useActionState<ActionState, FormData>(createTradeAction, undefined);
 
   const [symbol, setSymbol] = React.useState(editTrade?.symbol ?? '');
@@ -63,7 +62,6 @@ export default function TradeForm({ portfolioId, editTrade, platforms }: Props) 
   return (
     <FadeIn delay={0.1} className="w-full max-w-2xl mx-auto">
       <form action={formAction} className="space-y-8">
-        <input type="hidden" name="portfolioId" value={portfolioId} />
         {editTrade?.id ? <input type="hidden" name="tradeId" value={editTrade.id} /> : null}
 
         <div className="grid gap-6 sm:grid-cols-2">

@@ -50,7 +50,7 @@ Security is enforced at the database layer via PostgreSQL Row Level Security —
 - **`src/lib/supabase/auth.ts`** — `getUser()` helper used in server components
 - **`src/lib/repo/tradesRepo.ts`** — Database operations for trades (upsert/delete)
 - **`src/lib/validators/trade.ts`** — Zod schemas; validation happens before all DB writes
-- **`src/lib/bootstrap.ts`** — Creates default portfolio + user_settings on first login
+- **`src/lib/bootstrap.ts`** — Creates user_settings on first login
 
 ### Domain Logic
 
@@ -74,6 +74,5 @@ Tests are colocated in `__tests__/` subdirectories and use Vitest.
 
 ### Data Models
 
-- `portfolios` — id, user_id, name
-- `trades` — id, portfolio_id, asset metadata, quantity, price, fees, currency, platform, source, notes
+- `trades` — id, user_id, asset metadata, quantity, price, fees, currency, platform, source, notes
 - `user_settings` — user_id, base_currency (USD/INR), platforms[]

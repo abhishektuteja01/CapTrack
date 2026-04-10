@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { tradeSchema } from '@/lib/validators/trade';
 import { deleteTrade, upsertTrade } from '@/lib/repo/tradesRepo';
+import { getUser } from '@/lib/supabase/auth';
 
 type ActionState =
   | { ok: true; message: string }
@@ -31,13 +32,14 @@ export async function createTradeAction(
   _prevState: ActionState | undefined,
   formData: FormData,
 ): Promise<ActionState> {
-  const portfolioId = toStringVal(formData.get('portfolioId'));
+  const user = await getUser();
+  if (!user) return { ok: false, message: 'Unauthorized' };
+
   const occurredAtLocal = toStringVal(formData.get('occurredAt')); // datetime-local
   const occurredAtIso = occurredAtLocal ? new Date(occurredAtLocal).toISOString() : undefined;
   const tradeId = toStringVal(formData.get('tradeId'));
 
   const raw = {
-    portfolioId,
     occurredAt: occurredAtIso,
 
     asset: {
@@ -70,7 +72,6 @@ export async function createTradeAction(
   const trade = parsed.data;
 
   const payload = {
-    portfolio_id: trade.portfolioId,
     occurred_at: trade.occurredAt,
 
     asset_symbol: trade.asset.symbol,
@@ -93,7 +94,7 @@ export async function createTradeAction(
 
   const res = await upsertTrade({
     tradeId,
-    portfolioId: trade.portfolioId,
+    userId: user.id,
     payload,
   });
 
@@ -107,12 +108,13 @@ export async function createTradeAction(
 }
 
 export async function deleteTradeAction(formData: FormData): Promise<void> {
+  const user = await getUser();
+  if (!user) return;
+
   const tradeId = toStringVal(formData.get('tradeId'));
-  const portfolioId = toStringVal(formData.get('portfolioId'));
+  if (!tradeId) return;
 
-  if (!tradeId || !portfolioId) return;
-
-  await deleteTrade({ tradeId, portfolioId });
+  await deleteTrade({ tradeId, userId: user.id });
 
   revalidatePath('/trades');
   revalidatePath('/dashboard');

@@ -78,38 +78,12 @@ export default async function DashboardPage({
 
     const platforms = normalizePlatforms(userSettings?.platforms as string[] | null | undefined);
 
-    const { data: portfolios, error: portfoliosError } = await supabase
-      .from('portfolios')
-      .select('id, name, created_at')
-      .order('created_at', { ascending: true })
-      .limit(1);
-
-    if (portfoliosError) {
-      return (
-        <div className="rounded-xl border border-zinc-200 p-4">
-          <h1 className="text-lg font-semibold">Dashboard</h1>
-          <p className="mt-1 text-sm text-zinc-600">Failed to load portfolios: {portfoliosError.message}</p>
-        </div>
-      );
-    }
-
-    const portfolio = portfolios?.[0];
-
-    if (!portfolio) {
-      return (
-        <div className="rounded-xl border border-zinc-200 p-4">
-          <h1 className="text-lg font-semibold">Dashboard</h1>
-          <p className="mt-1 text-sm text-zinc-600">No portfolio found.</p>
-        </div>
-      );
-    }
-
     const { data: trades } = await supabase
       .from('trades')
       .select(
         'occurred_at, asset_symbol, asset_type, side, quantity, price, fees, currency, platform'
       )
-      .eq('portfolio_id', portfolio.id);
+      .eq('user_id', user.id);
 
     type TradeRow = {
       occurred_at: string;
@@ -329,7 +303,7 @@ export default async function DashboardPage({
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Dashboard</h1>
             <p className="text-sm text-zinc-500">
-              {portfolio.name} • {enriched.length} assets
+              {enriched.length} assets
             </p>
           </div>
 

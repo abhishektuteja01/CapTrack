@@ -3,43 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 export async function ensureUserBootstrap(userId: string) {
   const supabase = await supabaseServer();
 
-  // 1. Ensure default portfolio exists
-  const { data: portfolios, error: portfoliosErr } = await supabase
-    .from('portfolios')
-    .select('id')
-    .order('created_at', { ascending: true })
-    .limit(1);
-
-  if (portfoliosErr) {
-    throw portfoliosErr;
-  }
-
-  if (!portfolios || portfolios.length === 0) {
-    const { data: created, error: createPortfolioErr } = await supabase
-      .from('portfolios')
-      .insert({
-        user_id: userId,
-        name: 'Main',
-      })
-      .select('id')
-      .single();
-
-    if (createPortfolioErr) {
-      throw createPortfolioErr;
-    }
-
-    // As a safety net, if insert didn't return an id, re-check.
-    if (!created?.id) {
-      const retry = await supabase
-        .from('portfolios')
-        .select('id')
-        .order('created_at', { ascending: true })
-        .limit(1);
-      if (retry.error) throw retry.error;
-    }
-  }
-
-  // 2. Ensure user_settings row exists
+  // Ensure user_settings row exists
   const { data: settings, error: settingsErr } = await supabase
     .from('user_settings')
     .select('user_id')
