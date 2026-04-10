@@ -44,8 +44,6 @@ export const assetRefSchema = z.object({
  * This enforces *what is allowed*, not portfolio-level constraints.
  */
 export const tradeSchema = z.object({
-  portfolioId: z.string().uuid('Invalid portfolio id'),
-
   occurredAt: z
     .string()
     .refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid ISO timestamp'),

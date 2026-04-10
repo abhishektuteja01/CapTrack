@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import TradeForm from '@/components/trades/trade-form';
 import { FadeIn } from '@/components/ui/fade-in';
 import { supabaseServer } from '@/lib/supabase/server';
+import { getUser } from '@/lib/supabase/auth';
 
 function normalizePlatforms(raw: string[] | null | undefined): string[] {
   const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
@@ -25,13 +27,16 @@ export default async function EditTradePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const user = await getUser();
+  if (!user) redirect('/login');
+
   const { id } = await params;
   const supabase = await supabaseServer();
 
   const { data: t, error: tradeError } = await supabase
     .from('trades')
     .select(
-      'id, portfolio_id, occurred_at, asset_symbol, asset_type, side, quantity, price, fees, currency, platform, notes',
+      'id, occurred_at, asset_symbol, asset_type, side, quantity, price, fees, currency, platform, notes',
     )
     .eq('id', id)
     .single();
@@ -50,18 +55,6 @@ export default async function EditTradePage({
       </div>
     );
   }
-
-  const { data: portfolios, error: portfoliosError } = await supabase
-    .from('portfolios')
-    .select('id, name')
-    .eq('id', t.portfolio_id)
-    .limit(1);
-
-  if (portfoliosError) {
-    throw new Error(portfoliosError.message);
-  }
-
-  const portfolio = portfolios?.[0];
 
   const { data: userSettings, error: settingsErr } = await supabase
     .from('user_settings')
@@ -118,16 +111,7 @@ export default async function EditTradePage({
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Edit Trade</h1>
             <p className="text-sm text-zinc-600">
-              {portfolio ? (
-                <>
-                  Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span> in{' '}
-                  <span className="font-semibold text-zinc-900">{portfolio.name}</span>
-                </>
-              ) : (
-                <>
-                  Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span>
-                </>
-              )}
+              Editing <span className="font-semibold text-zinc-900">{t.asset_symbol}</span>
             </p>
           </div>
 
@@ -145,7 +129,7 @@ export default async function EditTradePage({
           <h2 className="text-sm font-semibold text-zinc-900">Trade Details</h2>
           <p className="text-[10px] uppercase tracking-wider font-medium text-zinc-400">Secure Edit</p>
         </div>
-        <TradeForm portfolioId={t.portfolio_id} editTrade={editTrade} platforms={platforms} />
+        <TradeForm editTrade={editTrade} platforms={platforms} />
       </FadeIn>
 
       <FadeIn delay={0.2} className="text-center">

@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { FadeIn } from '@/components/ui/fade-in';
 
 import TradeForm from '@/components/trades/trade-form';
 import { supabaseServer } from '@/lib/supabase/server';
+import { getUser } from '@/lib/supabase/auth';
 
 function normalizePlatforms(raw: string[] | null | undefined): string[] {
   const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
@@ -21,34 +23,10 @@ function normalizePlatforms(raw: string[] | null | undefined): string[] {
 }
 
 export default async function NewTradePage() {
+  const user = await getUser();
+  if (!user) redirect('/login');
+
   const supabase = await supabaseServer();
-
-  const { data: portfolios, error: portfoliosError } = await supabase
-    .from('portfolios')
-    .select('id, name, created_at')
-    .order('created_at', { ascending: true })
-    .limit(1);
-
-  if (portfoliosError) {
-    throw new Error(portfoliosError.message);
-  }
-
-  const portfolio = portfolios?.[0];
-
-  if (!portfolio) {
-    return (
-      <div className="space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Add trade</h1>
-        <p className="text-sm text-zinc-600">No portfolio found.</p>
-        <Link
-          href="/dashboard"
-          className="inline-flex h-10 items-center justify-center rounded-md border-2 border-zinc-900 bg-zinc-900 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
-        >
-          Go to dashboard
-        </Link>
-      </div>
-    );
-  }
 
   const { data: userSettings, error: settingsErr } = await supabase
     .from('user_settings')
@@ -56,8 +34,6 @@ export default async function NewTradePage() {
     .single();
 
   if (settingsErr) {
-    // If something goes wrong, fall back to a safe default.
-    // Bootstrapping in layout should make this rare.
     console.warn('Failed to load user settings:', settingsErr.message);
   }
 
@@ -69,9 +45,7 @@ export default async function NewTradePage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Add Trade</h1>
-            <p className="text-sm text-zinc-600">
-              Adding to <span className="font-semibold text-zinc-900">{portfolio.name}</span>
-            </p>
+            <p className="text-sm text-zinc-600">Add a new transaction</p>
           </div>
 
           <Link
@@ -91,7 +65,7 @@ export default async function NewTradePage() {
           </div>
         </div>
 
-        <TradeForm portfolioId={portfolio.id} platforms={platforms} />
+        <TradeForm platforms={platforms} />
       </FadeIn>
 
       <FadeIn delay={0.2} className="text-center">

@@ -24,20 +24,20 @@ export type TradesUpsertPayload = {
 
 export async function upsertTrade(args: {
   tradeId?: string | null;
-  portfolioId: string;
+  userId: string;
   payload: TradesUpsertPayload;
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { tradeId, portfolioId, payload } = args;
+  const { tradeId, userId, payload } = args;
   const supabase = await supabaseServer();
 
-  const row = { ...payload, portfolio_id: portfolioId };
+  const row = { ...payload, user_id: userId };
 
   const { error } = tradeId
     ? await supabase
         .from('trades')
         .update(row)
         .eq('id', tradeId)
-        .eq('portfolio_id', portfolioId)
+        .eq('user_id', userId)
     : await supabase.from('trades').insert(row);
 
   if (error) return { ok: false, message: error.message };
@@ -46,16 +46,16 @@ export async function upsertTrade(args: {
 
 export async function deleteTrade(args: {
   tradeId: string;
-  portfolioId: string;
+  userId: string;
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { tradeId, portfolioId } = args;
+  const { tradeId, userId } = args;
   const supabase = await supabaseServer();
 
   const { error } = await supabase
     .from('trades')
     .delete()
     .eq('id', tradeId)
-    .eq('portfolio_id', portfolioId);
+    .eq('user_id', userId);
 
   if (error) return { ok: false, message: error.message };
   return { ok: true };

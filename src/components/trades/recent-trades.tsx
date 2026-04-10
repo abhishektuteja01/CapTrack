@@ -98,12 +98,12 @@ function SortHeader({
 }
 
 export default async function RecentTrades({
-  portfolioId,
+  userId,
   page,
   search,
   sort,
 }: {
-  portfolioId: string;
+  userId: string;
   page: number;
   search?: string | string[];
   sort?: string | string[];
@@ -117,7 +117,7 @@ export default async function RecentTrades({
   let query = supabase
     .from('trades')
     .select('id, occurred_at, asset_symbol, asset_type, side, quantity, price, fees, currency, platform, notes', { count: 'exact' })
-    .eq('portfolio_id', portfolioId);
+    .eq('user_id', userId);
 
   // Apply search
   if (searchStr) {
@@ -238,7 +238,6 @@ export default async function RecentTrades({
                 </Link>
                 <DeleteTradeButton
                   tradeId={t.id}
-                  portfolioId={portfolioId}
                   className="text-xs font-medium text-rose-600 hover:text-rose-700"
                 />
               </div>
@@ -311,7 +310,6 @@ export default async function RecentTrades({
                         </Link>
                         <DeleteTradeButton
                           tradeId={t.id}
-                          portfolioId={portfolioId}
                           className="text-xs font-medium text-rose-600 hover:text-rose-700"
                         />
                       </div>
