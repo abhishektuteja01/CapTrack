@@ -1,20 +1,15 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Root guidance for Claude Code. Section-specific guidance lives in nested CLAUDE.md files — Claude Code auto-loads the nearest one.
 
 ## Commands
 
 ```bash
-npm run dev      # Start Next.js dev server (http://localhost:3000)
-npm run build    # Production build
-npm start        # Start production server
-npm run lint     # Run ESLint
-npm run test     # Run Vitest unit tests
-```
-
-To run a single test file:
-```bash
-npx vitest run src/lib/domain/portfolio/__tests__/positions.test.ts
+npm run dev      # Dev server at http://localhost:3000
+npm run build    # Production build (catches type errors)
+npm run lint     # ESLint
+npm run test     # Vitest unit tests
+npx vitest run <path>  # Run a single test file
 ```
 
 ## Environment Variables
@@ -24,55 +19,27 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
-## Architecture
+## High-Level Architecture
 
-**CapTrack** is a portfolio/trade tracker built with Next.js 15 App Router, Supabase (auth + PostgreSQL), and Tailwind CSS 4.
-
-### Request Flow
+Next.js 16 App Router + Supabase (auth + PostgreSQL) + Tailwind CSS 4.
 
 ```
-Browser → Next.js middleware (proxy.ts, session refresh) → Server Components → Supabase RLS → PostgreSQL
+Browser → middleware (session refresh) → Server Components → Supabase RLS → PostgreSQL
 ```
 
-Security is enforced at the database layer via PostgreSQL Row Level Security — all user tables have RLS enabled so users can only access their own data.
+Security is enforced at the DB layer via RLS — `auth.uid() = user_id` on all tables.
 
-### Route Groups
+## Section Guides
 
-- `src/app/(auth)/` — Public auth pages (login, signup, forgot/reset password)
-- `src/app/(app)/` — Protected pages; server components call `getUser()` and redirect to login if unauthenticated
-- `src/app/api/symbols/` — Symbol search proxy to Yahoo Finance
-- `src/app/auth/callback/` and `auth/logout/` — Supabase OAuth callback and logout handlers
+| Path | Scope |
+|------|-------|
+| `src/app/CLAUDE.md` | Routes, pages, server actions, auth guards |
+| `src/components/CLAUDE.md` | UI components, client components, forms |
+| `src/lib/CLAUDE.md` | Data layer, repo, validators, bootstrap, utilities |
+| `src/lib/domain/CLAUDE.md` | Pure business logic, position derivation, tests |
+| `src/lib/services/CLAUDE.md` | External APIs (Yahoo Finance), caching, FX |
 
-### Data Layer
-
-- **`src/lib/supabase/server.ts`** — Server-side Supabase client (SSR cookies)
-- **`src/lib/supabase/browser.ts`** — Client-side Supabase client
-- **`src/lib/supabase/auth.ts`** — `getUser()` helper used in server components
-- **`src/lib/repo/tradesRepo.ts`** — Database operations for trades (upsert/delete)
-- **`src/lib/validators/trade.ts`** — Zod schemas; validation happens before all DB writes
-- **`src/lib/bootstrap.ts`** — Creates user_settings on first login
-
-### Domain Logic
-
-Pure business logic lives in `src/lib/domain/` with no framework or database dependencies:
-- `portfolio/positions.ts` — `derivePositions()` calculates holdings via average-cost method from raw trades
-
-Tests are colocated in `__tests__/` subdirectories and use Vitest.
-
-### External Services
-
-- **Yahoo Finance** — prices (stocks, ETFs, crypto, FX) and symbol search. No auth required. Results are cached in-memory (5 min for symbols, 1 min for prices, 1 hour for USD/INR FX).
-- **Supabase Auth** — email/password + Google OAuth
-
-### Key Patterns
-
-- **Server Components by default**; add `'use client'` only for interactivity. Pages use `export const dynamic = 'force-dynamic'` since they depend on auth cookies.
-- **Error handling**: data functions return `{ ok: boolean, message?: string }` rather than throwing.
-- **`cn()` utility** (`src/lib/utils.ts`) combines `clsx` + `tailwind-merge` for conditional classNames.
-- **Multi-currency**: trades store original currency; dashboard converts to base currency (USD or INR) using live FX rates from Yahoo Finance.
-- **User bootstrapping**: handled in `bootstrap.ts` — safe to call multiple times (upsert semantics).
-
-### Data Models
+## Data Models
 
 - `trades` — id, user_id, asset metadata, quantity, price, fees, currency, platform, source, notes
 - `user_settings` — user_id, base_currency (USD/INR), platforms[]
