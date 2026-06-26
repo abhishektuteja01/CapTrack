@@ -284,14 +284,9 @@ export default async function DashboardPage({
       ? dayTotalsBase.dayPnl / dayTotalsBase.prevCloseValue
       : 0;
 
-    const currencySet = new Set(
-      enriched
-        .map((p) => (p.liveCurrency ?? p.currency ?? '').toUpperCase())
-        .filter(Boolean)
-    );
-    const hasMixedCurrencies = currencySet.size > 1;
+    const hasFxConversion = needsUsdInrFx;
 
-    const fxReady = !hasMixedCurrencies || typeof fxUsdInr === 'number' && fxUsdInr > 0;
+    const fxReady = !hasFxConversion || typeof fxUsdInr === 'number' && fxUsdInr > 0;
 
     const totalsPct = totalsBase.costBasis !== 0 ? totalsBase.unrealized / totalsBase.costBasis : 0;
 
@@ -349,7 +344,7 @@ export default async function DashboardPage({
           </FadeIn>
         ) : null}
 
-        {hasMixedCurrencies ? (
+        {hasFxConversion ? (
           <FadeIn delay={0.15} className="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-4 text-xs text-zinc-600 backdrop-blur-sm">
             Totals are converted to <span className="font-semibold text-zinc-900">{BASE_CCY}</span>
             {typeof fxUsdInr === 'number' && fxUsdInr > 0 ? (
@@ -440,11 +435,11 @@ export default async function DashboardPage({
                         <div className={`text-xs font-bold tabular-nums ${pnlClass(p.unrealized)}`}>
                           {typeof p.unrealizedPct === 'number' ? `${(p.unrealizedPct * 100).toFixed(2)}%` : '—'}
                         </div>
-                        <div className={`mt-0.5 text-lg font-bold tabular-nums ${pnlClass(p.unrealized)}`}>
-                          {typeof p.unrealized === 'number' ? (
+                        <div className={`mt-0.5 text-lg font-bold tabular-nums ${pnlClass(p.unrealizedBase ?? p.unrealized)}`}>
+                          {typeof (p.unrealizedBase ?? p.unrealized) === 'number' ? (
                             <>
-                              {p.unrealized >= 0 ? '+' : ''}
-                              {fmtMoney(p.unrealized, p.liveCurrency ?? p.currency)}
+                              {(p.unrealizedBase ?? p.unrealized)! >= 0 ? '+' : ''}
+                              {fmtMoney((p.unrealizedBase ?? p.unrealized)!, primaryCurrency)}
                             </>
                           ) : (
                             '—'

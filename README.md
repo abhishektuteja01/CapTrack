@@ -1,102 +1,114 @@
-# CapTrack
+<p align="center">
+  <img src="public/icons/icon-192.png" width="64" height="64" alt="CapTrack" />
+</p>
 
-CapTrack is a multi-platform portfolio tracking application that allows users to track trades, positions, and profit & loss (P&L) across different brokers and base currencies using live market data.
+<h1 align="center">CapTrack</h1>
 
-## Features
+<p align="center">
+  <strong>The minimal way to track your capital.</strong><br />
+  Beautifully simple portfolio tracking for modern investors.
+</p>
 
-- Secure authentication with Email/Password and Google OAuth
-- Portfolio and trade tracking across multiple platforms
-- Real-time unrealized P&L and **Today’s P&L**
-- Multi-currency support with automatic FX conversion
-- Position-level and portfolio-level analytics
-- Mobile-responsive UI with compact summaries
-- Database-enforced multi-tenancy using Row Level Security (RLS)
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss" alt="Tailwind CSS 4" />
+</p>
 
-## Tech Stack
+---
 
-**Frontend**
-- Next.js (App Router)
-- React Server Components
-- Tailwind CSS
+## What it does
 
-**Backend & Data**
-- Supabase (PostgreSQL + Auth)
-- Supabase Row Level Security (RLS)
+Track buy/sell trades across brokers, see real-time P&L in your base currency, and filter everything by platform. No clutter, no distractions.
 
-**Market Data**
-- Yahoo Finance (price data)
-- FX rate conversion for base currency normalization
+**Real-time data** — Live prices for US stocks, Indian stocks, ETFs, and crypto via Yahoo Finance.
+**Multi-currency** — Trade in USD or INR. Dashboard auto-converts to your base currency with live FX.
+**Platform filtering** — Tag trades by broker (Zerodha, Robinhood, etc.) and slice your dashboard by platform.
+**Secure by default** — Row Level Security at the database layer. Users can only access their own data.
 
-**Authentication**
-- Supabase Auth
-- Google OAuth (account picker enforced)
+## Tech stack
 
-## Architecture Overview
+| Layer | Tech |
+|-------|------|
+| Framework | Next.js 16 (App Router, Server Components, Server Actions) |
+| UI | React 19, Tailwind CSS 4, Framer Motion |
+| Database | Supabase (PostgreSQL + RLS) |
+| Auth | Supabase Auth (email/password + Google OAuth) |
+| Market data | Yahoo Finance (no API key needed) |
+| Validation | Zod |
+| Testing | Vitest |
 
-CapTrack follows a server-first architecture with strict database-level access control.
-
-- Authentication is handled by Supabase Auth.
-- Authorization is enforced using PostgreSQL Row Level Security (RLS).
-- Each user owns their own data, scoped by `user_id` at the database level.
-- No client-side filtering is relied upon for access control.
-
-**Request Flow**
-
-Browser → Next.js Server → Supabase (RLS) → PostgreSQL
-
-## Security Model
-
-- All user-facing tables are protected using Supabase Row Level Security (RLS).
-- Users can only read or modify rows that belong to their own account.
-- No service-role keys are used in application request paths.
-- Authentication context is passed using secure HTTP-only cookies.
-
-## Data Model (High Level)
-
-- `auth.users` — Supabase-managed authenticated users
-- `portfolios`
-  - `id`, `user_id`, `name`
-- `trades`
-  - `id`, `portfolio_id`, trade metadata
-- `user_settings`
-  - `user_id`, `base_currency`, `platforms`
-
-## User Bootstrapping
-
-On first login, CapTrack automatically ensures:
-
-- A default portfolio named `Main` exists for the user
-- A user settings row exists with:
-  - Base currency set to `USD`
-  - Platform set to `Manual`
-
-This guarantees the application is always in a valid state for new users.
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- A Supabase project
-
-### Environment Variables
-
-Create a `.env.local` file with the following values:
+## Quick start
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### Install and Run
-
-```bash
+# 1. Clone and install
+git clone https://github.com/abhishektuteja01/CapTrack.git
+cd CapTrack
 npm install
+
+# 2. Configure environment
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials:
+#   NEXT_PUBLIC_SUPABASE_URL=...
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+
+# 3. Run
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+Open [localhost:3000](http://localhost:3000).
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm start` | Serve production build |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run Vitest |
+
+## Architecture
+
+```
+Browser  ->  Middleware (session refresh)  ->  Server Components  ->  Supabase RLS  ->  PostgreSQL
+```
+
+- **Server-first** — Pages are Server Components by default. `'use client'` only for interactivity.
+- **Security at the DB layer** — Every table has RLS policies enforcing `auth.uid() = user_id`.
+- **Pure domain logic** — Position derivation lives in `src/lib/domain/` with zero framework dependencies.
+
+## Project structure
+
+```
+src/
+  app/
+    (app)/            Protected routes (dashboard, trades, settings)
+    (auth)/           Public auth (login, signup, password reset)
+    api/symbols/      Yahoo Finance symbol search proxy
+    auth/             OAuth callback + logout
+  components/
+    trades/           Trade form, list, filters, delete
+    layout/           App shell (header, user menu)
+    ui/               Primitives (animations, backgrounds)
+  lib/
+    domain/           Pure business logic (position derivation)
+    repo/             Database operations (trades CRUD)
+    services/         External APIs (Yahoo Finance, FX)
+    supabase/         Client setup + auth helpers
+    validators/       Zod schemas
+```
+
+## Data model
+
+| Table | Purpose |
+|-------|---------|
+| `trades` | Every buy/sell transaction — symbol, type, side, qty, price, fees, currency, platform |
+| `user_settings` | Per-user preferences — base currency (USD/INR), platform list |
+
+Both tables are scoped to `user_id` with RLS. No shared data, no admin tables.
 
 ## License
 
-MIT License
+MIT
