@@ -12,6 +12,11 @@ npm run test     # Vitest unit tests
 npx vitest run <path>  # Run a single test file
 ```
 
+## Git
+
+- Never add AI attribution to commits, pushes or PRs: no `Co-Authored-By: Claude` trailers, no "Generated with Claude Code" lines.
+- `main` is protected: changes go through a PR, and the `checks` CI job (lint, typecheck, tests, build) must pass.
+
 ## Environment Variables
 
 ```

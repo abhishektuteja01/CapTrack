@@ -105,6 +105,8 @@ export function compactMoney(v: number | null | undefined, currency: string) {
         style: 'currency',
         currency,
         notation: 'compact',
+        // Explicit minimum: older ICU (Node 22) otherwise prints ₹27.0L
+        minimumFractionDigits: 0,
         maximumFractionDigits: 1,
       }).format(v)
     );
