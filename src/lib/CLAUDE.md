@@ -30,7 +30,7 @@
 
 - `portfolio.ts` — `getPortfolio(supabase, opts)` builds the dashboard snapshot (holdings, closed positions, totals, allocation, history, XIRR) in the base currency. See `src/app/CLAUDE.md`.
 - `settings.ts` — `normalizePlatforms()`, `isoCurrencies()`, and zod schemas for base currency and platforms.
-- `supabase/service.ts` — service-role client for shared market data writes. Server only; `null` without `SUPABASE_SERVICE_ROLE_KEY`.
+- `supabase/service.ts` — service-role client for shared market data writes. Server only; `null` without `SUPABASE_SECRET_KEY`.
 
 ## Utilities
 

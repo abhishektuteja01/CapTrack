@@ -18,7 +18,7 @@ ECB reference rates via Frankfurter (free, no key, past values never change). Ab
 
 Supabase tables shared by all users (see `supabase/migrations/002_*`):
 - `fx_rates(date, currency, usd_per_unit)` and `price_history(symbol, date, close, currency)`.
-- Signed-in users can read; only the service role writes (`src/lib/supabase/service.ts`, needs `SUPABASE_SERVICE_ROLE_KEY`).
+- Signed-in users can read; only the service role writes (`src/lib/supabase/service.ts`, needs `SUPABASE_SECRET_KEY`).
 - **`loadUsdRates(supabase, currencies, from)`** and **`loadPriceHistory(supabase, assets)`** read the tables, fetch only missing or stale ranges, and write them back when the service key is set. Without the key they still return fetched data for the request.
 - `scripts/refresh-market-data.ts` runs the same loaders nightly from `.github/workflows/market-data.yml`.
 

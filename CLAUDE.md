@@ -16,8 +16,8 @@ npx vitest run <path>  # Run a single test file
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY   # server only; writes shared market data (optional locally)
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   # falls back to legacy NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SECRET_KEY                    # server only; writes shared market data. Falls back to SUPABASE_SERVICE_ROLE_KEY
 ```
 
 ## High-Level Architecture

@@ -51,7 +51,8 @@ npm install
 cp .env.example .env.local
 # Edit .env.local with your Supabase credentials:
 #   NEXT_PUBLIC_SUPABASE_URL=...
-#   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+#   SUPABASE_SECRET_KEY=...        # server only
 
 # 3. Run
 npm run dev

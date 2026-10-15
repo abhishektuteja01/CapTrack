@@ -1,6 +1,6 @@
 // scripts/refresh-market-data.ts
 // Nightly job (GitHub Actions): fill fx_rates and price_history for every symbol and currency in use.
-// Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. Run: npx tsx scripts/refresh-market-data.ts
+// Needs SUPABASE_URL and SUPABASE_SECRET_KEY. Run: npx tsx scripts/refresh-market-data.ts
 
 import { supabaseService } from '@/lib/supabase/service';
 import { loadPriceHistory, loadUsdRates } from '@/lib/services/market/store';
@@ -19,7 +19,7 @@ async function selectAll<T>(table: string, columns: string): Promise<T[]> {
 
 async function main() {
   const svc = supabaseService();
-  if (!svc) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
+  if (!svc) throw new Error('SUPABASE_URL and SUPABASE_SECRET_KEY must be set');
 
   const trades = await selectAll<{ asset_symbol: string; asset_type: string; occurred_at: string; currency: string }>(
     'trades',
