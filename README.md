@@ -20,10 +20,11 @@
 
 ## What it does
 
-Track buy/sell trades across brokers, see real-time P&L in your base currency, and filter everything by platform. No clutter, no distractions.
+Log trades from any broker in any currency. CapTrack converts each one at the rate on its date and shows holdings, realized and unrealized P&L, XIRR and history in your base currency.
 
 **Real-time data** — Live prices for US stocks, Indian stocks, ETFs, and crypto via Yahoo Finance.
-**Multi-currency** — Trade in USD or INR. Dashboard auto-converts to your base currency with live FX.
+**Multi-currency** — Any currency for trades and for your base. ECB reference rates (Yahoo fallback), converted at each trade's date.
+**Returns** — Realized P&L on sells, XIRR, and a value-vs-invested chart replayed from daily prices. Stock splits applied automatically.
 **Platform filtering** — Tag trades by broker (Zerodha, Robinhood, etc.) and slice your dashboard by platform.
 **Secure by default** — Row Level Security at the database layer. Users can only access their own data.
 
@@ -32,10 +33,10 @@ Track buy/sell trades across brokers, see real-time P&L in your base currency, a
 | Layer | Tech |
 |-------|------|
 | Framework | Next.js 16 (App Router, Server Components, Server Actions) |
-| UI | React 19, Tailwind CSS 4, Framer Motion |
+| UI | React 19, Tailwind CSS 4, Radix primitives, IBM Plex |
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth (email/password + Google OAuth) |
-| Market data | Yahoo Finance (no API key needed) |
+| Market data | Yahoo Finance prices, ECB rates via Frankfurter; cached in Supabase, refreshed nightly by a GitHub Action |
 | Validation | Zod |
 | Testing | Vitest |
 
@@ -92,7 +93,10 @@ src/
   components/
     trades/           Trade form, list, filters, delete
     layout/           App shell (header, user menu)
-    ui/               Primitives (animations, backgrounds)
+    ui/               Primitives (buttons, panels, tables, numbers)
+    portfolio/        Overview and Holdings screens
+    trades/           Trade form, panel, log
+    settings/         Settings and first-run setup
   lib/
     domain/           Pure business logic (position derivation)
     repo/             Database operations (trades CRUD)
@@ -106,9 +110,10 @@ src/
 | Table | Purpose |
 |-------|---------|
 | `trades` | Every buy/sell transaction — symbol, type, side, qty, price, fees, currency, platform |
-| `user_settings` | Per-user preferences — base currency (USD/INR), platform list |
+| `user_settings` | Per-user preferences — base currency (any ISO code), platform list |
+| `fx_rates`, `price_history`, `price_splits` | Shared daily market data; readable by signed-in users, written only with the secret key |
 
-Both tables are scoped to `user_id` with RLS. No shared data, no admin tables.
+`trades` and `user_settings` are scoped to `user_id` with RLS. Migrations live in `supabase/migrations/`.
 
 ## License
 

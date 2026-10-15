@@ -15,6 +15,7 @@ Calm trading terminal, light only. Tokens live in `src/app/globals.css` (`@theme
 - `layout/` — `AppFrame` (sidebar on desktop, top bar on mobile), `nav-links`, `user-menu` (Radix dropdown).
 - `portfolio/` — `OverviewView` and `HoldingsView` render whole screens from a `PortfolioSnapshot`, so the landing page can reuse them with `examplePortfolio()`. Parts: `SummaryStrip`, `PerformanceChart` (client; time-proportional x, hover/arrow-key readout), `AllocationPanel` (client), `HoldingsTable`, `StatusBar`, `PlatformFilter`.
 - `trades/` — `TradeForm` (client; side toggle, symbol combobox that accepts typed symbols, currency from the quote, FX rate on the trade date with an optional broker-rate override, live total, in-form delete confirm), `TradeSheet` (Radix dialog opened by `?new` / `?edit=id` on /trades), `TradesTable` (grouped by local day), `TradeFilters` (URL params).
+- `auth/` — `AuthPanel`, `AuthField`, `GoogleButton` and one form per auth page. Pages are server components that read `?next=` and pass it through `safeNext()` (`@/lib/auth-messages`), so forms render without JS. Show `authErrorMessage()`, never raw Supabase text.
 - `settings/` — `BaseCurrencyForm`, `PlatformsEditor` (renames carry over to trades), `NameForm`, `SetupForm` (first run on an empty Overview), `CurrencyPicker`.
 
 ## Patterns

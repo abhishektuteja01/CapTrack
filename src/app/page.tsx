@@ -1,90 +1,131 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
+import { redirect } from 'next/navigation';
+import { getUser } from '@/lib/supabase/auth';
+import { examplePortfolio } from '@/lib/example-portfolio';
+import { ButtonLink } from '@/components/ui/button';
+import { OverviewView } from '@/components/portfolio/overview-view';
 
-export default function LandingPage() {
+export const metadata: Metadata = {
+  title: { absolute: 'CapTrack · Trades from every broker, in your own currency' },
+};
+
+const SPEC: [string, string][] = [
+  ['Prices', 'Yahoo Finance, at most a minute old when the page loads. Some exchanges are delayed by 15 minutes.'],
+  ['Exchange rates', 'European Central Bank reference rates for about 30 currencies, Yahoo Finance for the rest. Each trade converts at the rate on its own date, or at your broker’s rate if you enter it.'],
+  ['Currencies', 'Any ISO 4217 code for trades and for your base currency. London prices quoted in pence are converted to pounds.'],
+  ['Cost basis', 'Average cost per holding, with fees included.'],
+  ['Realized P&L', 'Booked on every sell, after fees, at the rate on the sell date.'],
+  ['Returns', 'XIRR over your actual cash flows, so money added later doesn’t distort the number.'],
+  ['Splits', 'Applied automatically from Yahoo’s split data. Unreported splits of 5:1 or more are detected from the price.'],
+  ['Your data', 'Stored in Postgres with row-level security. Only your account can read your trades.'],
+];
+
+const NOT_YET = [
+  'No broker sync or CSV import. You enter trades yourself.',
+  'Dividends and interest aren’t tracked yet.',
+  'Mutual funds work only where Yahoo Finance has a price for them.',
+];
+
+export default async function Landing() {
+  // Signed-in visitors go straight to their numbers.
+  if (await getUser()) redirect('/dashboard');
+
+  const example = examplePortfolio();
+
   return (
-    <div className="min-h-dvh bg-bg">
-      <div className="relative w-full text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans">
-        {/* Navigation */}
-        <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-100 bg-white/60 backdrop-blur-md">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <Link href="/" className="flex items-center gap-2 group">
-                <div className="h-8 w-8 relative flex items-center justify-center transition-transform group-hover:scale-105">
-                  <Image src="/icons/icon-192.png" alt="CapTrack Logo" fill className="object-contain" />
-                </div>
-                <span className="text-xl font-bold tracking-tight">CapTrack</span>
-              </Link>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/login"
-                  className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95"
-                >
-                  Get Started
-                </Link>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-dvh">
+      <header className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <span className="text-sm font-semibold">CapTrack</span>
+        <nav className="flex items-center gap-1">
+          <Link href="/login" className="rounded-md px-2.5 py-1 text-[13px] text-ink-2 hover:bg-subtle hover:text-ink">
+            Sign in
+          </Link>
+          <ButtonLink href="/signup" size="sm" variant="primary">
+            Create account
+          </ButtonLink>
         </nav>
+      </header>
 
-        {/* Hero Section */}
-        <main className="pt-32 pb-16 px-4">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-zinc-900 mb-8 mt-12">
-              The minimal way to track your <span className="text-zinc-400">capital.</span>
+      <main>
+        <section className="mx-auto grid max-w-6xl gap-8 px-4 pb-10 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:pt-20">
+          <div className="flex flex-col gap-5">
+            <h1 className="max-w-[18ch] text-[34px] font-semibold leading-[1.08] tracking-[-0.02em] text-balance sm:text-[44px]">
+              Your trades from every broker, valued in your own currency.
             </h1>
-            <p className="text-lg sm:text-xl text-zinc-500 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Beautifully simple portfolio tracking for modern investors.
-              No clutter, no distractions, just your growth.
+          </div>
+          <div className="flex flex-col gap-5 lg:pt-2">
+            <p className="max-w-[52ch] text-[15px] leading-relaxed text-ink-2">
+              Log buys and sells from Zerodha, Interactive Brokers, Coinbase or anywhere else, in rupees, dollars,
+              euros or any other currency. CapTrack converts each trade at the rate on the day you made it, then shows
+              what you hold, what you’ve made, and your annual return.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto rounded-full bg-zinc-900 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95"
-              >
-                Start tracking now
+            <div className="flex flex-wrap items-center gap-3">
+              <ButtonLink href="/signup" variant="primary" className="h-9 px-4">
+                Create a free account
+              </ButtonLink>
+              <Link href="/login" className="text-[13px] text-accent hover:underline">
+                I already have one
               </Link>
             </div>
           </div>
+        </section>
 
-          {/* Minimal Feature List */}
-          <section className="mt-32 max-w-6xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div>
-                <h3 className="text-xl font-bold mb-3 text-zinc-900">Real-time Data</h3>
-                <p className="text-zinc-500">Live price updates for US stocks, Indian stocks, and crypto.</p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-3 text-zinc-900">Multi-Currency</h3>
-                <p className="text-zinc-500">Track your portfolio in USD or INR with automatic FX conversion.</p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-3 text-zinc-900">Clean Insights</h3>
-                <p className="text-zinc-500">Simple P&L tracking and position analysis without the noise.</p>
-              </div>
+        <section aria-label="Example portfolio" className="mx-auto max-w-6xl px-2 sm:px-6">
+          <div className="overflow-hidden rounded-md border border-line-strong bg-bg">
+            <div className="flex items-center justify-between border-b border-line bg-surface px-3 py-1.5">
+              <span className="num hidden text-2xs text-ink-3 sm:inline">Overview · base currency INR</span>
+              <span className="text-2xs text-ink-3">Example portfolio, not real data</span>
             </div>
-          </section>
-        </main>
-
-        {/* Footer */}
-        <footer className="mt-20 border-t border-zinc-100 py-12 px-4 text-center">
-          <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 relative flex items-center justify-center">
-                <Image src="/logo-v2.png" alt="CapTrack Logo" fill className="object-contain" />
-              </div>
-              <span className="text-sm font-semibold text-zinc-900">CapTrack</span>
+            <div className="p-2 sm:p-4">
+              <OverviewView snapshot={example} demo />
             </div>
-            <p className="text-sm text-zinc-400">© 2026 CapTrack. All rights reserved.</p>
           </div>
-        </footer>
-      </div>
+        </section>
+
+        <section className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <h2 className="text-base font-semibold">How the numbers work</h2>
+          <dl className="divide-y divide-line border-y border-line">
+            {SPEC.map(([k, v]) => (
+              <div key={k} className="grid gap-1 py-3 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-6">
+                <dt className="condensed text-2xs font-medium uppercase tracking-[0.05em] text-ink-3 sm:pt-0.5">{k}</dt>
+                <dd className="max-w-[68ch] text-[14px] text-ink">{v}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <h2 className="text-base font-semibold">What it doesn’t do yet</h2>
+          <ul className="flex flex-col gap-2 text-[14px] text-ink-2">
+            {NOT_YET.map((n) => (
+              <li key={n} className="flex gap-2">
+                <span aria-hidden="true" className="text-ink-3">–</span>
+                {n}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="border-t border-line bg-surface">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6">
+            <p className="max-w-[48ch] text-[15px]">
+              Free while it’s a side project. Start with one trade; your history and returns build from there.
+            </p>
+            <ButtonLink href="/signup" variant="primary" className="h-9 px-4">
+              Create a free account
+            </ButtonLink>
+          </div>
+        </section>
+      </main>
+
+      <footer className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-6 text-2xs text-ink-3 sm:px-6">
+        <span>CapTrack</span>
+        <span>
+          Prices: Yahoo Finance. Exchange rates: European Central Bank. Not investment advice.{' '}
+          <a href="https://github.com/abhishektuteja01/CapTrack" className="text-accent hover:underline">
+            Source on GitHub
+          </a>
+        </span>
+      </footer>
     </div>
   );
 }

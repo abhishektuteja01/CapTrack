@@ -50,7 +50,7 @@ export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapsho
       <Cell label="XIRR" sub="a year">
         {pct(t.xirr, 2, false)}
       </Cell>
-      <Cell label="Today" className="text-ink-2" sub={moneyDelta(t.dayChange, ccy, 0)}>
+      <Cell label="Today" className={cn('text-ink-2', !actions && 'col-span-2')} sub={moneyDelta(t.dayChange, ccy, 0)}>
         <span className={cn('text-[13px]', toneClass(t.dayChange))}>{pct(t.dayChangePct)}</span>
       </Cell>
       {actions ? (

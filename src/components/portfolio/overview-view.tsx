@@ -18,17 +18,20 @@ export function OverviewView({
   platform,
   refresh,
   setup,
+  demo,
 }: {
   snapshot: PortfolioSnapshot;
   platform?: string;
   refresh?: ReactNode;
   /** First-run setup form, shown when there are no trades at all. */
   setup?: ReactNode;
+  /** Example data on the landing page: no links into the app, no page title. */
+  demo?: boolean;
 }) {
   const { baseCurrency, holdings } = snapshot;
   const missing = [...snapshot.missingQuotes, ...snapshot.missingFx];
 
-  const actions = (
+  const actions = demo ? undefined : (
     <>
       {refresh}
       <ButtonLink href="/trades/new?from=/dashboard" size="sm" variant="primary">
@@ -39,7 +42,7 @@ export function OverviewView({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className={demo ? 'hidden' : 'flex flex-wrap items-center justify-between gap-2'}>
         <h1 className="text-base font-semibold">Overview</h1>
         {snapshot.tradeCount > 0 || platform ? <PlatformFilter platforms={snapshot.platforms} current={platform} /> : null}
       </div>
@@ -93,9 +96,11 @@ export function OverviewView({
               title={`Holdings · ${holdings.length}`}
               meta="by value"
               actions={
-                <Link href="/holdings" className="px-1 text-2xs text-accent hover:underline">
-                  All columns
-                </Link>
+                demo ? undefined : (
+                  <Link href="/holdings" className="px-1 text-2xs text-accent hover:underline">
+                    All columns
+                  </Link>
+                )
               }
             />
             {holdings.length ? (
