@@ -10,11 +10,12 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.0",
-    "gsap": "^3.14.2",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
     "react": "19.2.3",

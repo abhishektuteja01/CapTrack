@@ -1,81 +1,91 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  
-  /* Aurora Colors */
-  --white: #ffffff;
-  --black: #000000;
-  --transparent: transparent;
-  --blue-500: #3b82f6;
-  --indigo-300: #a5b4fc;
-  --blue-300: #93c5fd;
-  --violet-200: #ddd6fe;
-  --blue-400: #60a5fa;
+/*
+ * CapTrack "Instrument" theme: calm trading terminal, light only.
+ * Cool graphite neutrals, one petrol-teal accent, hairlines instead of shadows.
+ * Gain/loss colors are for change numbers only. Contrast checked to WCAG AA on bg, surface and subtle.
+ */
+@theme {
+  --font-sans: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+
+  --color-bg: #F4F5F5;
+  --color-surface: #FFFFFF;
+  --color-subtle: #ECEEEE;
+  --color-hover: #F7F9F9;
+  --color-line: #DEE1E1;
+  --color-line-strong: #C3C8C8;
+
+  --color-ink: #101314;
+  --color-ink-2: #465055;
+  --color-ink-3: #626C71;
+
+  --color-accent: #0B6872;
+  --color-accent-hover: #095A63;
+  --color-accent-soft: #E6EEEE;
+
+  --color-pos: #0E7A5F;
+  --color-pos-soft: #ECF4F2;
+  --color-neg: #C23A22;
+  --color-neg-soft: #FAEFED;
+  --color-warn: #875A00;
+  --color-warn-soft: #F5F2EB;
+
+  /* Chart series, fixed order. Never reuse pos/neg as series. */
+  --color-series-1: #0B6872;
+  --color-series-2: #B7791F;
+  --color-series-3: #2F3A44;
+  --color-series-4: #7A8EA3;
+  --color-series-5: #A8475F;
+  --color-series-6: #5E8A4A;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+
+  --text-2xs: 11px;
+  --text-2xs--line-height: 14px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-
-  /* Aurora Animation */
-  @keyframes aurora {
-    from {
-      background-position: 50% 50%, 50% 50%;
-    }
-    to {
-      background-position: 350% 50%, 350% 50%;
-    }
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
   }
-  --animate-aurora: aurora 60s linear infinite;
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
 }
 
-/* Force light theme by ignoring dark mode preferences */
-:root {
-  --background: #ffffff !important;
-  --foreground: #171717 !important;
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums slashed-zero;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden;
+/* Condensed sans for column headers and panel titles (Plex Sans wdth axis). */
+@utility condensed {
+  font-stretch: 87.5%;
 }
 
-/* Minimal UX polish */
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
-}
-
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-:focus-visible {
-  outline: 2px solid #18181b; /* zinc-900 */
-  outline-offset: 2px;
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #e4e4e7;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #d4d4d8;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
 }

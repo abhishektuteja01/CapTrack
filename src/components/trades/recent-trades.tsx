@@ -2,7 +2,6 @@
 import { supabaseServer } from '@/lib/supabase/server';
 import Link from 'next/link';
 import DeleteTradeButton from './delete-trade-button';
-import { FadeIn } from '../ui/fade-in';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
 type TradeRow = {
@@ -149,10 +148,10 @@ export default async function RecentTrades({
 
     if (error) {
     return (
-      <FadeIn className="mt-8 bg-white/70 p-6 border border-zinc-200/50 rounded-2xl backdrop-blur-sm">
+      <div className="mt-8 bg-white/70 p-6 border border-zinc-200/50 rounded-2xl backdrop-blur-sm">
         <div className="text-sm font-semibold text-zinc-900">Recent trades</div>
         <p className="mt-1 text-sm text-zinc-600">Failed to load trades: {error.message}</p>
-      </FadeIn>
+      </div>
     );
   }
 
@@ -162,18 +161,18 @@ export default async function RecentTrades({
 
     if (trades.length === 0 && !searchStr) {
     return (
-      <FadeIn className="mt-8 text-center bg-white/70 p-12 border border-zinc-200/50 rounded-3xl backdrop-blur-sm">
+      <div className="mt-8 text-center bg-white/70 p-12 border border-zinc-200/50 rounded-3xl backdrop-blur-sm">
         <div className="text-sm font-semibold text-zinc-900">No trades yet</div>
         <p className="mt-1 text-sm text-zinc-500 max-w-sm mx-auto">Your portfolio is empty. Add your first trade to start tracking your performance.</p>
         <Link href="/trades/new" className="mt-4 inline-flex items-center justify-center rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-800">
           Add Trade
         </Link>
-      </FadeIn>
+      </div>
     );
   }
 
   return (
-    <FadeIn delay={0.2} className="mt-8 w-full">
+    <div className="mt-8 w-full">
       <div className="flex items-end justify-between px-2 py-3 mb-2">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-zinc-900">Recent trades</h2>
@@ -370,6 +369,6 @@ export default async function RecentTrades({
           Next
         </Link>
       </div>
-    </FadeIn>
+    </div>
   );
 }

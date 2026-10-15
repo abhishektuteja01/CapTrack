@@ -3,7 +3,6 @@ import RecentTrades from '@/components/trades/recent-trades';
 import { redirect } from 'next/navigation';
 import { getUser } from '@/lib/supabase/auth';
 import Link from 'next/link';
-import { FadeIn } from '@/components/ui/fade-in';
 import TradeFilters from '@/components/trades/trade-filters';
 
 export default async function TradesPage({
@@ -22,7 +21,7 @@ export default async function TradesPage({
 
   return (
     <div className="space-y-6">
-      <FadeIn>
+      <div>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Trades</h1>
@@ -44,7 +43,7 @@ export default async function TradesPage({
         <div className="mt-6">
           {/* Placeholder for now to ensure imports work */}
         </div>
-      </FadeIn>
+      </div>
 
       <RecentTrades
         userId={user.id}

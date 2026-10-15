@@ -110,6 +110,8 @@ export type PortfolioSnapshot = {
   history: HistoryPoint[];
   /** Latest quote time (ms) across holdings. */
   pricesAsOf?: number;
+  /** True when the latest quote is more than 4 days old. */
+  pricesStale: boolean;
   /** FX date used for today's conversion, and 1 unit → base for each currency shown. */
   fx: { date: string; rates: { currency: string; toBase: number }[] };
   missingQuotes: string[];
@@ -171,6 +173,7 @@ export async function getPortfolio(
     allocation: { platform: [], currency: [], type: [] },
     history: [],
     fx: { date: today, rates: [] },
+    pricesStale: false,
     missingQuotes: [],
     missingFx: [],
   };
@@ -349,6 +352,7 @@ export async function getPortfolio(
     : undefined;
   const rate = flows ? xirr(flows) : undefined;
 
+  const pricesAsOf = quotes.length ? Math.max(...quotes.map((q) => q.timestamp)) : undefined;
   const fxDate = rows.reduce((m, r) => (r.date > m ? r.date : m), '');
   const shownCurrencies = Array.from(new Set(holdings.map((h) => h.quoteCurrency).filter(Boolean))) as string[];
 
@@ -374,7 +378,8 @@ export async function getPortfolio(
       type: slices(byType, value),
     },
     history,
-    pricesAsOf: quotes.length ? Math.max(...quotes.map((q) => q.timestamp)) : undefined,
+    pricesAsOf,
+    pricesStale: pricesAsOf !== undefined && Date.now() - pricesAsOf > 4 * 86400000,
     fx: {
       date: fxDate || today,
       rates: shownCurrencies
@@ -385,4 +390,19 @@ export async function getPortfolio(
     missingQuotes,
     missingFx: Array.from(missingFx),
   };
+}
+
+export type ChartPoint = { d: string; v: number; c: number };
+
+/**
+ * Shrink daily history for the client: every day for the last ~13 months, one point a week before that.
+ * The last point is always kept.
+ */
+export function chartPoints(history: HistoryPoint[]): ChartPoint[] {
+  if (!history.length) return [];
+  const last = history[history.length - 1].date;
+  const cutoff = new Date(Date.parse(`${last}T00:00:00Z`) - 400 * 86400000).toISOString().slice(0, 10);
+  return history
+    .filter((p, i) => p.date >= cutoff || i % 7 === 0 || i === history.length - 1)
+    .map((p) => ({ d: p.date, v: Math.round(p.value * 100) / 100, c: Math.round(p.costBasis * 100) / 100 }));
 }

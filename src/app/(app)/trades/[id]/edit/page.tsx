@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import TradeForm from '@/components/trades/trade-form';
-import { FadeIn } from '@/components/ui/fade-in';
 import { supabaseServer } from '@/lib/supabase/server';
 import { getUser } from '@/lib/supabase/auth';
 
@@ -106,7 +105,7 @@ export default async function EditTradePage({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <FadeIn>
+      <div>
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Edit Trade</h1>
@@ -122,21 +121,21 @@ export default async function EditTradePage({
             Cancel
           </Link>
         </div>
-      </FadeIn>
+      </div>
 
-      <FadeIn delay={0.1} className="relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
         <div className="mb-6 flex items-center justify-between border-b border-zinc-100 pb-4">
           <h2 className="text-sm font-semibold text-zinc-900">Trade Details</h2>
           <p className="text-[10px] uppercase tracking-wider font-medium text-zinc-400">Secure Edit</p>
         </div>
         <TradeForm editTrade={editTrade} platforms={platforms} />
-      </FadeIn>
+      </div>
 
-      <FadeIn delay={0.2} className="text-center">
+      <div className="text-center">
         <p className="text-xs text-zinc-400">
           Tip: update Platforms in <Link href="/settings" className="underline hover:text-zinc-900">Settings</Link>.
         </p>
-      </FadeIn>
+      </div>
     </div>
   );
 }

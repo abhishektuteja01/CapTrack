@@ -1,7 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
-import { FadeIn } from '@/components/ui/fade-in';
 import { currencySchema, isoCurrencies, normalizePlatforms } from '@/lib/settings';
 
 function normalizePlatformsFromTextarea(raw: string): string[] {
@@ -74,18 +73,18 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <FadeIn>
+      <div>
         <section className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Settings</h1>
           <p className="text-sm text-zinc-600">
             Manage your global preferences and integrations.
           </p>
         </section>
-      </FadeIn>
+      </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
         {/* Base currency */}
-        <FadeIn delay={0.1} className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+        <div className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
           <div className="text-sm font-semibold text-zinc-900">Base currency</div>
           <p className="mt-1 text-xs text-zinc-500">
             Default currency for dashboard totals.
@@ -119,10 +118,10 @@ export default async function SettingsPage() {
           <p className="mt-3 text-[10px] text-zinc-400 uppercase tracking-wide">
             Current: <span className="font-bold text-zinc-700">{baseCcy}</span>
           </p>
-        </FadeIn>
+        </div>
 
         {/* Platforms */}
-        <FadeIn delay={0.2} className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
+        <div className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
           <div className="text-sm font-semibold text-zinc-900">Trade platforms</div>
           <p className="mt-1 text-xs text-zinc-500">
             One platform per line. Used in dropdowns/filters.
@@ -154,19 +153,19 @@ export default async function SettingsPage() {
               </span>
             ))}
           </div>
-        </FadeIn>
+        </div>
 
-        <FadeIn delay={0.3} className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl sm:col-span-2">
+        <div className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl sm:col-span-2">
           <div className="text-sm font-semibold text-zinc-900">Imports</div>
           <p className="mt-1 text-sm text-zinc-600">
             Coming soon: import trades from broker apps via CSV or direct integrations.
           </p>
-        </FadeIn>
+        </div>
       </div>
 
-      <FadeIn delay={0.4} className="rounded-2xl bg-zinc-50/50 p-4 text-xs text-zinc-500 text-center">
+      <div className="rounded-2xl bg-zinc-50/50 p-4 text-xs text-zinc-500 text-center">
         Preferences are synced to your account.
-      </FadeIn>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@
 import React from 'react';
 import { createTradeAction } from '@/app/(app)/trades/actions';
 import SymbolAutocomplete, { SymbolSuggestion } from './symbol-autocomplete';
-import { FadeIn } from '../ui/fade-in';
 import { motion } from 'framer-motion';
 
 const nowDateTimeLocal = () => {
@@ -60,7 +59,7 @@ export default function TradeForm({ editTrade, platforms }: Props) {
   const errorClass = "text-xs text-rose-600 mt-1";
 
   return (
-    <FadeIn delay={0.1} className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto">
       <form action={formAction} className="space-y-8">
         {editTrade?.id ? <input type="hidden" name="tradeId" value={editTrade.id} /> : null}
 
@@ -269,6 +268,6 @@ export default function TradeForm({ editTrade, platforms }: Props) {
           </div>
         ) : null}
       </form>
-    </FadeIn>
+    </div>
   );
 }

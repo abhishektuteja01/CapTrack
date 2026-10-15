@@ -1,23 +1,25 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { Suspense } from 'react';
-import { LoadingProgress } from '@/components/ui/loading-progress';
+import type { Metadata, Viewport } from 'next';
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+// latin-ext carries the rupee sign (U+20B9); without it ₹ falls back to a system font.
+const plexSans = IBM_Plex_Sans({
+  variable: '--font-plex-sans',
+  subsets: ['latin', 'latin-ext'],
+  axes: ['wdth'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const plexMono = IBM_Plex_Mono({
+  variable: '--font-plex-mono',
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500'],
 });
 
 export const metadata: Metadata = {
-  title: 'CapTrack',
+  title: { default: 'CapTrack', template: '%s · CapTrack' },
   applicationName: 'CapTrack',
-  description: 'Mobile-first portfolio tracking: trades → positions → performance.',
+  description:
+    'Track trades across brokers and currencies. Positions, realized and unrealized P&L, and XIRR in your own base currency.',
 
   // iOS Add to Home Screen
   appleWebApp: {
@@ -32,21 +34,18 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: '#F4F5F5',
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="min-h-dvh bg-white text-zinc-900">
-          <Suspense fallback={null}>
-            <LoadingProgress />
-          </Suspense>
-          {children}
-        </div>
-      </body>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
+      <body className="min-h-dvh">{children}</body>
     </html>
   );
 }

@@ -125,3 +125,10 @@ export function sign(v: number | null | undefined): -1 | 0 | 1 {
   if (!known(v) || v === 0) return 0;
   return v > 0 ? 1 : -1;
 }
+
+/** Exchange rate: 4 significant decimals, no symbol. */
+export function rate(v: number | null | undefined) {
+  if (!known(v)) return NONE;
+  const d = Math.abs(v) >= 10 ? 2 : 4;
+  return nf('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
+}

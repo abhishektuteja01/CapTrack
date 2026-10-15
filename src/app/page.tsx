@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { AuroraBackground } from '@/components/ui/aurora-background';
 
 export default function LandingPage() {
   return (
-    <AuroraBackground>
+    <div className="min-h-dvh bg-bg">
       <div className="relative w-full text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans">
         {/* Navigation */}
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-100 bg-white/60 backdrop-blur-md">
@@ -86,6 +85,6 @@ export default function LandingPage() {
           </div>
         </footer>
       </div>
-    </AuroraBackground>
+    </div>
   );
 }
