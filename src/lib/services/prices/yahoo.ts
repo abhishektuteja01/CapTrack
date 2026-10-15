@@ -5,6 +5,7 @@
 
 import { normalizeCurrency } from '@/lib/domain/fx/rates';
 import type { PricePoint } from '@/lib/domain/portfolio/history';
+import type { Split } from '@/lib/domain/portfolio/splits';
 
 export type YahooQuote = {
   symbol: string;
@@ -64,6 +65,9 @@ type YahooChartMeta = {
 
 type YahooChartResult = {
   meta?: YahooChartMeta;
+  events?: {
+    splits?: Record<string, { date: number; numerator: number; denominator: number }>;
+  };
   timestamp?: number[];
   indicators?: {
     quote?: Array<{
@@ -199,20 +203,20 @@ export async function fetchYahooPrices(
 }
 
 /**
- * Daily closes from `from` (YYYY-MM-DD) to today, in major units.
- * Dates are the exchange's local trading day.
+ * Daily closes from `from` (YYYY-MM-DD) to today, in major units, plus reported splits.
+ * Dates are the exchange's local trading day. Closes are as Yahoo returns them (usually split-adjusted).
  */
 export async function fetchDailyHistory(
   symbol: string,
   assetType: string | undefined,
   from: string
-): Promise<{ symbol: string; currency: string; points: PricePoint[] }> {
+): Promise<{ symbol: string; currency: string; points: PricePoint[]; splits: Split[] }> {
   const yahooSymbol = toYahooSymbol(symbol, assetType);
   const period1 = Math.floor(Date.parse(`${from}T00:00:00Z`) / 1000);
   const period2 = Math.floor(Date.now() / 1000);
   const result = await fetchChart(
     yahooSymbol,
-    `period1=${period1}&period2=${period2}&interval=1d`,
+    `period1=${period1}&period2=${period2}&interval=1d&events=split`,
     3600
   );
 
@@ -229,9 +233,19 @@ export async function fetchDailyHistory(
     byDate.set(date, c * factor); // a later row for the same day wins
   });
 
+  const splits: Split[] = Object.values(result.events?.splits ?? {})
+    .filter((e) => e.numerator > 0 && e.denominator > 0)
+    .map((e) => ({
+      date: new Date((e.date + offset) * 1000).toISOString().slice(0, 10),
+      ratio: e.numerator / e.denominator,
+      source: 'yahoo' as const,
+    }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
   return {
     symbol: yahooSymbol,
     currency,
+    splits,
     points: Array.from(byDate, ([date, close]) => ({ date, close })).sort((a, b) =>
       a.date < b.date ? -1 : 1
     ),

@@ -12,6 +12,7 @@ import {
 } from '@/lib/domain/portfolio/positions';
 import { buildHistory, portfolioCashFlows, type HistoryPoint } from '@/lib/domain/portfolio/history';
 import { xirr } from '@/lib/domain/portfolio/xirr';
+import type { Split } from '@/lib/domain/portfolio/splits';
 import { makeFxLookup } from '@/lib/domain/fx/rates';
 import { fetchYahooPrices, toYahooSymbol, type YahooQuote } from '@/lib/services/prices/yahoo';
 import { isoDate, loadPriceHistory, loadUsdRates } from '@/lib/services/market/store';
@@ -75,6 +76,8 @@ export type Holding = {
   intraday: number[];
   firstTradeAt: string;
   mixedCurrency: boolean;
+  /** Splits applied to this holding. */
+  splits: Split[];
   missing?: 'quote' | 'fx';
 };
 
@@ -179,17 +182,32 @@ export async function getPortfolio(
   };
   if (!trades.length) return empty;
 
-  // 1. Live quotes for open positions
+  // 1. Live quotes for open positions, and daily history + splits for every asset ever traded
   const nativePositions = derivePositions(trades, { includeClosed: true });
   const open = nativePositions.filter((p) => !p.closed);
-  let quotes: YahooQuote[] = [];
-  try {
-    quotes = await fetchYahooPrices(
-      open.map((p) => ({ symbol: p.asset.symbol, assetType: String(p.asset.type) }))
-    );
-  } catch (e) {
-    console.error('[portfolio] quotes failed', e instanceof Error ? e.message : e);
-  }
+  const firstByKey = new Map<string, TradeLike>();
+  trades.forEach((t) => {
+    const k = assetKey(t.asset.symbol, t.asset.type);
+    if (!firstByKey.has(k)) firstByKey.set(k, t);
+  });
+  const [quotes, priceHistory] = await Promise.all([
+    fetchYahooPrices(open.map((p) => ({ symbol: p.asset.symbol, assetType: String(p.asset.type) }))).catch(
+      (e): YahooQuote[] => {
+        console.error('[portfolio] quotes failed', e instanceof Error ? e.message : e);
+        return [];
+      }
+    ),
+    loadPriceHistory(
+      supabase,
+      Array.from(firstByKey, ([key, t]) => ({
+        key,
+        symbol: t.asset.symbol,
+        type: String(t.asset.type),
+        from: t.occurredAt.slice(0, 10),
+      }))
+    ),
+  ]);
+  const { splits } = priceHistory;
   const quoteBySymbol = new Map(quotes.map((q) => [q.symbol.toUpperCase(), q]));
   const quoteFor = (p: Pick<Position, 'asset'>) =>
     quoteBySymbol.get(toYahooSymbol(p.asset.symbol, String(p.asset.type)).toUpperCase());
@@ -203,7 +221,7 @@ export async function getPortfolio(
   const fx: FxLookup = makeFxLookup(rows);
 
   // 3. Positions with base-currency cost and realized P&L
-  const positions = derivePositions(trades, { baseCurrency, fx, includeClosed: true });
+  const positions = derivePositions(trades, { baseCurrency, fx, includeClosed: true, splits });
   const platformsByKey = new Map<string, Set<string>>();
   trades.forEach((t) => {
     const k = assetKey(t.asset.symbol, t.asset.type);
@@ -280,6 +298,7 @@ export async function getPortfolio(
       intraday: q?.intraday ?? [],
       firstTradeAt: p.firstTradeAt,
       mixedCurrency: p.mixedCurrency,
+      splits: p.splits,
       missing: !q ? 'quote' : rate === undefined ? 'fx' : undefined,
     });
   }
@@ -317,7 +336,7 @@ export async function getPortfolio(
     tradesByPlatform.set(t.platform, list);
   });
   for (const [platform, list] of tradesByPlatform) {
-    for (const p of derivePositions(list)) {
+    for (const p of derivePositions(list, { splits })) {
       const q = quoteFor(p);
       const rate = q ? fx(q.currency, baseCurrency, today) : undefined;
       if (q && rate !== undefined) add(byPlatform, platform, p.quantity * q.price * rate);
@@ -327,21 +346,7 @@ export async function getPortfolio(
   // 6. History and XIRR
   let history: HistoryPoint[] = [];
   if (opts.withHistory !== false) {
-    const firstByKey = new Map<string, TradeLike>();
-    trades.forEach((t) => {
-      const k = assetKey(t.asset.symbol, t.asset.type);
-      if (!firstByKey.has(k)) firstByKey.set(k, t);
-    });
-    const prices = await loadPriceHistory(
-      supabase,
-      Array.from(firstByKey, ([key, t]) => ({
-        key,
-        symbol: t.asset.symbol,
-        type: String(t.asset.type),
-        from: t.occurredAt.slice(0, 10),
-      }))
-    );
-    history = buildHistory({ trades, prices, baseCurrency, fx, end: today });
+    history = buildHistory({ trades, prices: priceHistory.prices, baseCurrency, fx, end: today, splits });
     // Today's point uses live prices when every holding is priced.
     const last = history[history.length - 1];
     if (last && complete) last.value = value;

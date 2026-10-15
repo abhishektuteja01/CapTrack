@@ -1,56 +1,67 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTransition, useState, useEffect } from 'react';
-import { Search, Loader2 } from 'lucide-react';
-import { useDebounce } from 'use-debounce';
+import { useEffect, useState, useTransition } from 'react';
+import { inputClass } from './symbol-autocomplete';
+import { cn } from '@/lib/utils';
 
-export default function TradeFilters() {
+/** Symbol search, platform and side. All in the URL so filtered views can be shared and refreshed. */
+export default function TradeFilters({ platforms }: { platforms: string[] }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const params = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  const [q, setQ] = useState(params.get('q') ?? '');
 
-  const initialSearch = searchParams.get('search') ?? '';
-  const [text, setText] = useState(initialSearch);
-  const [query] = useDebounce(text, 500);
-
-  useEffect(() => {
-    // Only update if query actually changed from current param
-    if (query === searchParams.get('search')) return;
-    // Also skip if query is empty and param is missing
-    if (!query && !searchParams.has('search')) return;
-
-    const params = new URLSearchParams(searchParams);
-    if (query) {
-      params.set('search', query);
-    } else {
-      params.delete('search');
+  function set(next: Record<string, string | undefined>) {
+    const p = new URLSearchParams(params.toString());
+    for (const [k, v] of Object.entries(next)) {
+      if (v) p.set(k, v);
+      else p.delete(k);
     }
-    // Reset page on search
-    params.delete('page');
+    p.delete('page');
+    startTransition(() => router.replace(`/trades${p.size ? `?${p}` : ''}`, { scroll: false }));
+  }
 
-    startTransition(() => {
-      router.replace(`/trades?${params.toString()}`);
-    });
-  }, [query, router, searchParams]);
+  // Debounce the symbol search.
+  useEffect(() => {
+    if ((params.get('q') ?? '') === q) return;
+    const t = setTimeout(() => set({ q: q.trim() || undefined }), 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   return (
-    <div className="relative w-full max-w-sm">
-      <div className="relative">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Search symbol..."
-          className="peer block w-full rounded-full border border-zinc-200 bg-white/80 py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-        />
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 peer-focus:text-zinc-900">
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
-        </div>
-      </div>
+    <div className={cn('flex flex-wrap items-center gap-2', pending && 'opacity-70')}>
+      <input
+        aria-label="Search symbol"
+        placeholder="Symbol"
+        value={q}
+        onChange={(e) => setQ(e.target.value.toUpperCase())}
+        className={cn(inputClass, 'num h-7 w-36 uppercase placeholder:normal-case')}
+      />
+      <select
+        aria-label="Platform"
+        value={params.get('platform') ?? ''}
+        onChange={(e) => set({ platform: e.target.value || undefined })}
+        className={cn(inputClass, 'h-7 w-auto')}
+      >
+        <option value="">All platforms</option>
+        {platforms.map((p) => (
+          <option key={p} value={p}>
+            {p}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Side"
+        value={params.get('side') ?? ''}
+        onChange={(e) => set({ side: e.target.value || undefined })}
+        className={cn(inputClass, 'h-7 w-auto')}
+      >
+        <option value="">Buys and sells</option>
+        <option value="BUY">Buys</option>
+        <option value="SELL">Sells</option>
+      </select>
     </div>
   );
 }

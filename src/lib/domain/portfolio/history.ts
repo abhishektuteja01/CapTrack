@@ -3,6 +3,7 @@
 // all in the base currency. Pure: prices and FX are passed in.
 
 import {
+  SplitCursor,
   applyTrade,
   assetKey,
   sortTrades,
@@ -13,10 +14,11 @@ import {
   type TradeLike,
 } from './positions';
 import type { CashFlow } from './xirr';
+import type { Split } from './splits';
 
 export type PricePoint = { date: string; close: number };
 
-/** Daily closes for one asset, ascending by date, in major units of `currency`. */
+/** Daily closes for one asset, ascending by date, in major units of `currency`, as actually traded (not split-adjusted). */
 export type PriceSeries = { currency: string; points: PricePoint[] };
 
 export type HistoryPoint = {
@@ -43,8 +45,10 @@ export function buildHistory(args: {
   baseCurrency: string;
   fx: FxLookup;
   end: string;
+  splits?: Map<string, Split[]>;
 }): HistoryPoint[] {
   const { prices, baseCurrency, fx, end } = args;
+  const splits = new SplitCursor(args.splits);
   const trades = sortTrades(args.trades);
   if (!trades.length) return [];
 
@@ -55,6 +59,7 @@ export function buildHistory(args: {
 
   let ti = 0;
   for (let date = tradeDate(trades[0]); date <= end; date = addDays(date, 1)) {
+    splits.advanceAll(ledger, date);
     while (ti < trades.length && tradeDate(trades[ti]) <= date) {
       const t = trades[ti];
       applyTrade(ledger, t, tradeRateToBase(t, baseCurrency, fx));

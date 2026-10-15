@@ -49,7 +49,7 @@ export function HoldingsView({
         <h1 className="text-base font-semibold">Holdings</h1>
         <div className="flex flex-wrap items-center gap-2">
           <PlatformFilter platforms={snapshot.platforms} current={platform} basePath="/holdings" />
-          <ButtonLink href="/trades/new" size="sm" variant="primary">
+          <ButtonLink href="/trades/new?from=/holdings" size="sm" variant="primary">
             Add trade
           </ButtonLink>
         </div>
@@ -89,7 +89,7 @@ export function HoldingsView({
           <EmptyState
             title="No open positions"
             body="Add a buy to start tracking a position."
-            action={<ButtonLink href="/trades/new" variant="primary">Add trade</ButtonLink>}
+            action={<ButtonLink href="/trades/new?from=/holdings" variant="primary">Add trade</ButtonLink>}
           />
         )}
       </Panel>

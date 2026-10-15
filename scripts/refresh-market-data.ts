@@ -41,10 +41,11 @@ async function main() {
   }
   settings.forEach((s) => s.base_currency && currencies.add(s.base_currency.toUpperCase()));
 
-  const prices = await loadPriceHistory(svc, Array.from(assets.values()));
+  const { prices, splits } = await loadPriceHistory(svc, Array.from(assets.values()));
   prices.forEach((s) => currencies.add(s.currency));
   const fx = await loadUsdRates(svc, Array.from(currencies), earliest);
 
+  for (const [key, list] of splits) console.log(`splits ${key}: ${list.map((s) => `${s.date} ×${s.ratio} (${s.source})`).join(', ')}`);
   console.log(
     `assets: ${assets.size} (priced ${prices.size}), currencies: ${currencies.size}, fx rows: ${fx.rows.length} (${fx.source})`
   );

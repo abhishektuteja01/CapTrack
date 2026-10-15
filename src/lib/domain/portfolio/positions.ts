@@ -2,6 +2,8 @@
 // Pure domain logic: derive current positions from a trade stream.
 // No Supabase/Next imports here.
 
+import type { Split } from './splits';
+
 export type AssetType = 'stock' | 'etf' | 'mutual_fund' | 'crypto' | 'cash' | string;
 export type TradeSide = 'BUY' | 'SELL';
 
@@ -68,6 +70,9 @@ export type Position = {
   firstTradeAt: string;
   lastTradeAt: string;
   tradeCount: number;
+
+  /** Splits applied to this holding, oldest first. */
+  splits: Split[];
 };
 
 export type DerivePositionsOptions = {
@@ -87,6 +92,12 @@ export type DerivePositionsOptions = {
 
   /** Keep fully sold positions in the result (marked `closed`). Default false. */
   includeClosed?: boolean;
+
+  /** Splits per `assetKey`, ascending. Applied before any trade on or after the split date. */
+  splits?: Map<string, Split[]>;
+
+  /** Apply splits up to this date (YYYY-MM-DD). Default: all of them. */
+  asOf?: string;
 };
 
 export function assetKey(symbol: string, type: AssetType) {
@@ -168,6 +179,7 @@ export function applyTrade(
     firstTradeAt: t.occurredAt,
     lastTradeAt: t.occurredAt,
     tradeCount: 0,
+    splits: [],
     baseMissing: false,
   };
 
@@ -216,6 +228,37 @@ export function applyTrade(
   ledger.set(key, pos);
 }
 
+/**
+ * Apply a split to a held asset: quantity × ratio, per-unit cost ÷ ratio. Totals don't change.
+ * No-op when the asset isn't held yet.
+ */
+export function applySplit(ledger: Ledger, key: string, split: Split) {
+  const pos = ledger.get(key);
+  if (!pos || pos.quantity === 0 || !(split.ratio > 0)) return;
+  pos.quantity *= split.ratio;
+  pos.avgCost = pos.quantity > 0 ? pos.costBasis / pos.quantity : 0;
+  pos.splits = [...pos.splits, split];
+}
+
+/** Applies each asset's splits in date order as the replay moves forward. */
+export class SplitCursor {
+  private next = new Map<string, number>();
+  constructor(private splits: Map<string, Split[]> = new Map()) {}
+
+  /** Apply every split for `key` dated on or before `date` that hasn't been applied yet. */
+  advance(ledger: Ledger, key: string, date: string) {
+    const list = this.splits.get(key);
+    if (!list) return;
+    let i = this.next.get(key) ?? 0;
+    while (i < list.length && list[i].date <= date) applySplit(ledger, key, list[i++]);
+    this.next.set(key, i);
+  }
+
+  advanceAll(ledger: Ledger, date: string) {
+    for (const key of this.splits.keys()) this.advance(ledger, key, date);
+  }
+}
+
 function toPosition(entry: LedgerEntry, hasBase: boolean): Position {
   const { baseMissing, ...pos } = entry;
   if (!hasBase || baseMissing) {
@@ -233,16 +276,20 @@ function toPosition(entry: LedgerEntry, hasBase: boolean): Position {
  *   and books realized P&L of (soldQty * price - sellFees - removedCost)
  * - With `baseCurrency` + `fx`, every amount is also tracked in the base currency
  *   at the trade-date rate (or the trade's own `fxRate` override).
+ * - `splits` multiply quantity (and divide per-unit cost) for holdings existing before each split date.
  */
 export function derivePositions(
   trades: TradeLike[],
   opts: DerivePositionsOptions = {}
 ): Position[] {
   const ledger: Ledger = new Map();
+  const splits = new SplitCursor(opts.splits);
 
   for (const t of sortTrades(trades)) {
+    splits.advance(ledger, assetKey(t.asset.symbol, t.asset.type), tradeDate(t));
     applyTrade(ledger, t, tradeRateToBase(t, opts.baseCurrency, opts.fx), opts);
   }
+  splits.advanceAll(ledger, opts.asOf ?? '9999-12-31');
 
   const hasBase = Boolean(opts.baseCurrency);
 

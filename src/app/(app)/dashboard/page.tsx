@@ -7,6 +7,7 @@ import { ensureUserBootstrap } from '@/lib/bootstrap';
 import { getPortfolio } from '@/lib/portfolio';
 import { Button } from '@/components/ui/button';
 import { OverviewView } from '@/components/portfolio/overview-view';
+import { SetupForm } from '@/components/settings/settings-forms';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Overview' };
@@ -43,6 +44,7 @@ export default async function DashboardPage({
     <OverviewView
       snapshot={snapshot}
       platform={platform}
+      setup={<SetupForm baseCurrency={snapshot.baseCurrency} platforms={snapshot.platforms} />}
       refresh={
         <form action={refreshPrices}>
           <Button type="submit" size="sm" variant="ghost">

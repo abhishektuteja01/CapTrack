@@ -1,171 +1,61 @@
-import { revalidatePath } from 'next/cache';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
-import { currencySchema, isoCurrencies, normalizePlatforms } from '@/lib/settings';
+import { getSettings } from '@/lib/user-settings';
+import { Panel, PanelHeader } from '@/components/ui/panel';
+import { BaseCurrencyForm, NameForm, PlatformsEditor } from '@/components/settings/settings-forms';
 
-function normalizePlatformsFromTextarea(raw: string): string[] {
-  return normalizePlatforms(raw.split(/\r?\n/));
-}
+export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
   const supabase = await supabaseServer();
-
-  const { data: userSettings, error: settingsErr } = await supabase
-    .from('user_settings')
-    .select('base_currency, platforms')
-    .single();
-
-  // If something else went wrong (not just "no rows"), surface it.
-  if (settingsErr && !userSettings) {
-    return (
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-red-600">Failed to load settings: {settingsErr.message}</p>
-      </div>
-    );
-  }
-
-  const baseCcy = String(userSettings?.base_currency ?? 'USD').toUpperCase();
-  const currencyOptions = isoCurrencies();
-
-  const platforms = normalizePlatforms(userSettings?.platforms as string[] | null | undefined);
-  const platformsText = platforms.join('\n');
-
-  async function setBaseCurrency(formData: FormData) {
-    'use server';
-    const parsed = currencySchema.safeParse(formData.get('baseCurrency'));
-    if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Invalid currency');
-    const value = parsed.data;
-
-    const supabase = await supabaseServer();
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) redirect('/login');
-
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ user_id: auth.user.id, base_currency: value }, { onConflict: 'user_id' });
-
-    if (error) throw error;
-
-    revalidatePath('/dashboard');
-    revalidatePath('/settings');
-  }
-
-  async function setPlatforms(formData: FormData) {
-    'use server';
-    const raw = String(formData.get('platforms') ?? '');
-    const list = normalizePlatformsFromTextarea(raw);
-
-    const supabase = await supabaseServer();
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) redirect('/login');
-
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ user_id: auth.user.id, platforms: list }, { onConflict: 'user_id' });
-
-    if (error) throw error;
-
-    revalidatePath('/dashboard');
-    revalidatePath('/trades');
-    revalidatePath('/settings');
-  }
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect('/login');
+  const settings = await getSettings(supabase);
+  const meta = data.user.user_metadata ?? {};
+  const name =
+    (typeof meta.display_name === 'string' && meta.display_name) ||
+    (typeof meta.full_name === 'string' && meta.full_name) ||
+    '';
 
   return (
-    <div className="space-y-6">
-      <div>
-        <section className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Settings</h1>
-          <p className="text-sm text-zinc-600">
-            Manage your global preferences and integrations.
-          </p>
-        </section>
-      </div>
+    <div className="flex max-w-2xl flex-col gap-3">
+      <h1 className="text-base font-semibold">Settings</h1>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        {/* Base currency */}
-        <div className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
-          <div className="text-sm font-semibold text-zinc-900">Base currency</div>
-          <p className="mt-1 text-xs text-zinc-500">
-            Default currency for dashboard totals.
-          </p>
+      <Panel>
+        <PanelHeader title="Base currency" />
+        <BaseCurrencyForm current={settings.baseCurrency} />
+      </Panel>
 
-          <form action={setBaseCurrency} className="mt-4 flex items-center gap-2">
-            <div className="relative">
-              <select
-                name="baseCurrency"
-                defaultValue={baseCcy}
-                className="h-9 w-[120px] appearance-none rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white"
-              >
-                {currencyOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="h-9 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95"
-            >
-              Save
-            </button>
-          </form>
+      <Panel>
+        <PanelHeader title="Platforms" meta={`${settings.platforms.length}`} />
+        <PlatformsEditor current={settings.platforms} />
+      </Panel>
 
-          <p className="mt-3 text-[10px] text-zinc-400 uppercase tracking-wide">
-            Current: <span className="font-bold text-zinc-700">{baseCcy}</span>
-          </p>
-        </div>
+      <Panel>
+        <PanelHeader title="Account" />
+        <dl className="grid grid-cols-[120px_minmax(0,1fr)] items-center gap-x-4 gap-y-3 p-4 text-[13px]">
+          <dt className="text-ink-3">
+            <label htmlFor="display-name">Name</label>
+          </dt>
+          <dd>
+            <NameForm current={name} />
+          </dd>
+          <dt className="text-ink-3">Email</dt>
+          <dd className="truncate">{data.user.email}</dd>
+          <dt className="text-ink-3">Session</dt>
+          <dd>
+            <a href="/auth/logout" className="text-accent hover:underline">
+              Sign out
+            </a>
+          </dd>
+        </dl>
+      </Panel>
 
-        {/* Platforms */}
-        <div className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl">
-          <div className="text-sm font-semibold text-zinc-900">Trade platforms</div>
-          <p className="mt-1 text-xs text-zinc-500">
-            One platform per line. Used in dropdowns/filters.
-          </p>
-
-          <form action={setPlatforms} className="mt-4 space-y-3">
-            <textarea
-              name="platforms"
-              defaultValue={platformsText}
-              rows={5}
-              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white"
-              placeholder={'Manual\nRobinhood\nCoinbase'}
-            />
-            <button
-              type="submit"
-              className="h-9 w-full rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95"
-            >
-              Save platforms
-            </button>
-          </form>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {platforms.map((p) => (
-              <span
-                key={p}
-                className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600"
-              >
-                {p}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-zinc-200/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl sm:col-span-2">
-          <div className="text-sm font-semibold text-zinc-900">Imports</div>
-          <p className="mt-1 text-sm text-zinc-600">
-            Coming soon: import trades from broker apps via CSV or direct integrations.
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl bg-zinc-50/50 p-4 text-xs text-zinc-500 text-center">
-        Preferences are synced to your account.
-      </div>
+      <p className="px-0.5 text-2xs text-ink-3">
+        Prices come from Yahoo Finance and exchange rates from the European Central Bank, with Yahoo as a fallback.
+      </p>
     </div>
   );
 }

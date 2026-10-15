@@ -14,7 +14,8 @@ Calm trading terminal, light only. Tokens live in `src/app/globals.css` (`@theme
 - `ui/` — primitives: `Button`/`ButtonLink`, `Panel`/`PanelHeader`, `Table`/`Th`/`Td`/`Tr` (`wide` hides a column on phones), `Money`/`Delta`/`Pct`, `Sparkline`, `Notice`, `EmptyState`, `Skeleton`, `LocalTime`.
 - `layout/` — `AppFrame` (sidebar on desktop, top bar on mobile), `nav-links`, `user-menu` (Radix dropdown).
 - `portfolio/` — `OverviewView` and `HoldingsView` render whole screens from a `PortfolioSnapshot`, so the landing page can reuse them with `examplePortfolio()`. Parts: `SummaryStrip`, `PerformanceChart` (client; time-proportional x, hover/arrow-key readout), `AllocationPanel` (client), `HoldingsTable`, `StatusBar`, `PlatformFilter`.
-- `trades/` — trade form, list, filters, delete button (restyle pending).
+- `trades/` — `TradeForm` (client; side toggle, symbol combobox that accepts typed symbols, currency from the quote, FX rate on the trade date with an optional broker-rate override, live total, in-form delete confirm), `TradeSheet` (Radix dialog opened by `?new` / `?edit=id` on /trades), `TradesTable` (grouped by local day), `TradeFilters` (URL params).
+- `settings/` — `BaseCurrencyForm`, `PlatformsEditor` (renames carry over to trades), `NameForm`, `SetupForm` (first run on an empty Overview), `CurrencyPicker`.
 
 ## Patterns
 

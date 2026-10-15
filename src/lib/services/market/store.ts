@@ -6,6 +6,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { UsdRateRow } from '@/lib/domain/fx/rates';
 import type { PriceSeries } from '@/lib/domain/portfolio/history';
+import { detectImpliedSplits, mergeSplits, unadjustForSplits, type Split } from '@/lib/domain/portfolio/splits';
 import { supabaseService } from '@/lib/supabase/service';
 import { fetchFrankfurterRange, frankfurterCurrencies } from '@/lib/services/fx/frankfurter';
 import { fetchDailyHistory, fetchYahooUsdRateHistory, toYahooSymbol } from '@/lib/services/prices/yahoo';
@@ -39,7 +40,7 @@ function isStale(latest: string | undefined, today: string) {
   return !latest || latest < addDays(today, -1);
 }
 
-async function writeBack(table: 'fx_rates' | 'price_history', rows: Record<string, unknown>[]) {
+async function writeBack(table: 'fx_rates' | 'price_history' | 'price_splits', rows: Record<string, unknown>[]) {
   const svc = supabaseService();
   if (!svc || !rows.length) return;
   for (let i = 0; i < rows.length; i += PAGE) {
@@ -152,32 +153,50 @@ export async function loadUsdRates(
 
 export type HistoryAsset = { key: string; symbol: string; type: string; from: string };
 
+export type PriceHistory = {
+  /** Closes as actually traded (split adjustments undone), keyed by `asset.key`. */
+  prices: Map<string, PriceSeries>;
+  /** Reported and detected splits per `asset.key`, ascending. */
+  splits: Map<string, Split[]>;
+};
+
 /**
- * Daily closes per asset (keyed by `asset.key`) from each asset's `from` to today.
- * Reads price_history, fills gaps from Yahoo, writes them back. Failed symbols are left out.
+ * Daily closes and splits per asset from each asset's `from` to today.
+ * Reads price_history and price_splits, refetches missing or stale symbols from Yahoo in full,
+ * and writes them back. Failed symbols are left out of `prices`.
  */
 export async function loadPriceHistory(
   supabase: SupabaseClient,
   assets: HistoryAsset[]
-): Promise<Map<string, PriceSeries>> {
-  const out = new Map<string, PriceSeries>();
-  if (!assets.length) return out;
+): Promise<PriceHistory> {
+  const raw = new Map<string, PriceSeries>();
+  const reported = new Map<string, Split[]>();
+  if (!assets.length) return { prices: raw, splits: reported };
   const today = isoDate();
   const bySymbol = new Map(assets.map((a) => [toYahooSymbol(a.symbol, a.type), a]));
   const symbols = Array.from(bySymbol.keys());
   const earliest = assets.reduce((m, a) => (a.from < m ? a.from : m), today);
 
   let stored: { symbol: string; date: string; close: number; currency: string }[] = [];
+  let storedSplits: { symbol: string; date: string; ratio: number }[] = [];
   try {
-    stored = await selectAll((a, b) =>
-      supabase
-        .from('price_history')
-        .select('symbol, date, close, currency')
-        .in('symbol', symbols)
-        .gte('date', addDays(earliest, -7))
-        .order('date')
-        .range(a, b)
-    );
+    [stored, storedSplits] = await Promise.all([
+      selectAll<{ symbol: string; date: string; close: number; currency: string }>((a, b) =>
+        supabase
+          .from('price_history')
+          .select('symbol, date, close, currency')
+          .in('symbol', symbols)
+          .gte('date', addDays(earliest, -7))
+          .order('date')
+          .range(a, b)
+      ),
+      selectAll<{ symbol: string; date: string; ratio: number }>((a, b) =>
+        supabase.from('price_splits').select('symbol, date, ratio').in('symbol', symbols).order('date').range(a, b)
+      ).catch((e) => {
+        console.error('[prices] splits read failed', e instanceof Error ? e.message : e);
+        return [];
+      }),
+    ]);
   } catch (e) {
     console.error('[prices] history read failed', e instanceof Error ? e.message : e);
   }
@@ -185,20 +204,27 @@ export async function loadPriceHistory(
   for (const r of stored) {
     const a = bySymbol.get(r.symbol);
     if (!a) continue;
-    const s = out.get(a.key) ?? { currency: r.currency, points: [] };
+    const s = raw.get(a.key) ?? { currency: r.currency, points: [] };
     s.points.push({ date: r.date, close: Number(r.close) });
-    out.set(a.key, s);
+    raw.set(a.key, s);
+  }
+  for (const r of storedSplits) {
+    const a = bySymbol.get(r.symbol);
+    if (!a) continue;
+    reported.set(a.key, [...(reported.get(a.key) ?? []), { date: r.date, ratio: Number(r.ratio), source: 'yahoo' }]);
   }
 
   const toFetch = symbols.filter((sym) => {
     const a = bySymbol.get(sym)!;
-    const pts = out.get(a.key)?.points ?? [];
+    const pts = raw.get(a.key)?.points ?? [];
     if (!pts.length) return true;
     // first stored close well after the first trade means the start is missing
     if (pts[0].date > addDays(a.from, 7)) return true;
     return isStale(pts[pts.length - 1].date, today);
   });
 
+  // Always refetch a symbol's whole range: Yahoo rewrites past closes after a split,
+  // so mixing old and new rows would create a fake jump.
   const results = await Promise.allSettled(
     toFetch.map((sym) => {
       const a = bySymbol.get(sym)!;
@@ -207,6 +233,7 @@ export async function loadPriceHistory(
   );
 
   const rows: Record<string, unknown>[] = [];
+  const splitRows: Record<string, unknown>[] = [];
   results.forEach((r, i) => {
     const sym = toFetch[i];
     const a = bySymbol.get(sym)!;
@@ -214,12 +241,23 @@ export async function loadPriceHistory(
       console.error('[prices] history fetch failed for', sym);
       return;
     }
-    out.set(a.key, { currency: r.value.currency, points: r.value.points });
+    raw.set(a.key, { currency: r.value.currency, points: r.value.points });
+    reported.set(a.key, mergeSplits(reported.get(a.key) ?? [], r.value.splits));
     for (const p of r.value.points) {
       rows.push({ symbol: sym, date: p.date, close: p.close, currency: r.value.currency });
     }
+    for (const sp of r.value.splits) splitRows.push({ symbol: sym, date: sp.date, ratio: sp.ratio });
   });
 
-  await writeBack('price_history', rows);
-  return out;
+  await Promise.all([writeBack('price_history', rows), writeBack('price_splits', splitRows)]);
+
+  const prices = new Map<string, PriceSeries>();
+  const splits = new Map<string, Split[]>();
+  for (const [key, series] of raw) {
+    const rep = reported.get(key) ?? [];
+    prices.set(key, { currency: series.currency, points: unadjustForSplits(series.points, rep) });
+    const all = mergeSplits(rep, detectImpliedSplits(series.points));
+    if (all.length) splits.set(key, all);
+  }
+  return { prices, splits };
 }

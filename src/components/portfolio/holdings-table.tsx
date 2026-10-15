@@ -15,6 +15,21 @@ function Missing({ h }: { h: Holding }) {
   );
 }
 
+function SplitTag({ h }: { h: Holding }) {
+  if (!h.splits.length) return null;
+  const label = h.splits
+    .map((s) => (s.ratio >= 1 ? `${+s.ratio.toFixed(2)}:1` : `1:${+(1 / s.ratio).toFixed(2)}`))
+    .join(', ');
+  const title = h.splits
+    .map((s) => `Quantity and cost adjusted for a ${s.ratio >= 1 ? 'split' : 'reverse split'} on ${s.date}${s.source === 'detected' ? ' (detected from the price change)' : ''}`)
+    .join('. ');
+  return (
+    <span title={title} className="ml-1.5 rounded-sm bg-subtle px-1 py-px text-2xs text-ink-2">
+      split {label}
+    </span>
+  );
+}
+
 function Row({ h, base, variant }: { h: Holding; base: string; variant: Variant }) {
   const full = variant === 'full';
   return (
@@ -22,6 +37,7 @@ function Row({ h, base, variant }: { h: Holding; base: string; variant: Variant 
       <Td className="max-w-56">
         <div className="flex items-center">
           <span className="font-semibold">{h.symbol}</span>
+          <SplitTag h={h} />
           <Missing h={h} />
         </div>
         {full && h.name ? <div className="truncate text-2xs text-ink-3">{h.name}</div> : null}

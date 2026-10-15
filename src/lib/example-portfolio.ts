@@ -163,6 +163,7 @@ export function examplePortfolio(): PortfolioSnapshot {
       intraday: Array.from({ length: 48 }, (_, k) => a.prev + (a.end - a.prev) * (k / 47) + Math.sin(k / 3 + a.symbol.length) * a.end * 0.002),
       firstTradeAt: p.firstTradeAt,
       mixedCurrency: false,
+      splits: [],
     });
   }
 

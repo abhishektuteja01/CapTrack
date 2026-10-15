@@ -17,10 +17,13 @@ export function OverviewView({
   snapshot,
   platform,
   refresh,
+  setup,
 }: {
   snapshot: PortfolioSnapshot;
   platform?: string;
   refresh?: ReactNode;
+  /** First-run setup form, shown when there are no trades at all. */
+  setup?: ReactNode;
 }) {
   const { baseCurrency, holdings } = snapshot;
   const missing = [...snapshot.missingQuotes, ...snapshot.missingFx];
@@ -28,7 +31,7 @@ export function OverviewView({
   const actions = (
     <>
       {refresh}
-      <ButtonLink href="/trades/new" size="sm" variant="primary">
+      <ButtonLink href="/trades/new?from=/dashboard" size="sm" variant="primary">
         Add trade
       </ButtonLink>
     </>
@@ -38,20 +41,26 @@ export function OverviewView({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-base font-semibold">Overview</h1>
-        <PlatformFilter platforms={snapshot.platforms} current={platform} />
+        {snapshot.tradeCount > 0 || platform ? <PlatformFilter platforms={snapshot.platforms} current={platform} /> : null}
       </div>
 
-      {snapshot.tradeCount === 0 ? (
+      {snapshot.tradeCount === 0 && !platform ? (
         <Panel>
-          <EmptyState
-            title={platform ? `No trades on ${platform} yet` : 'No trades yet'}
-            body={`Add a buy from any broker in any currency. CapTrack converts everything to ${baseCurrency} at the rate on the trade date and keeps your positions, returns and history up to date.`}
-            action={
-              <ButtonLink href="/trades/new" variant="primary">
-                Add your first trade
-              </ButtonLink>
-            }
-          />
+          <PanelHeader title="Set up" meta="two questions, then your first trade" />
+          {setup ?? (
+            <EmptyState
+              title="No trades yet"
+              action={
+                <ButtonLink href="/trades?new=1" variant="primary">
+                  Add your first trade
+                </ButtonLink>
+              }
+            />
+          )}
+        </Panel>
+      ) : snapshot.tradeCount === 0 ? (
+        <Panel>
+          <EmptyState title={`No trades on ${platform} yet`} />
         </Panel>
       ) : (
         <>
