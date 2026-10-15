@@ -42,7 +42,7 @@ function fmtDate(d: string) {
 }
 
 const H = 220;
-const PAD = { top: 12, right: 8, bottom: 22, left: 0 };
+const PAD = { top: 18, right: 8, bottom: 22, left: 0 };
 
 /**
  * Portfolio value against money invested (cost basis), straight lines, no fill.
@@ -71,8 +71,9 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
 
   const first = data[0];
   const last = data[data.length - 1];
-  // Gain in range excludes money added: Δvalue − Δinvested
-  const gain = first && last ? last.v - first.v - (last.c - first.c) : undefined;
+  // Since start: value − invested. Shorter ranges exclude money added: Δvalue − Δinvested.
+  const gain =
+    first && last ? (range === 'All' ? last.v - last.c : last.v - first.v - (last.c - first.c)) : undefined;
 
   const geo = useMemo(() => {
     if (data.length < 2 || !width) return null;

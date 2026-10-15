@@ -18,7 +18,7 @@ function Cell({
   className?: string;
 }) {
   return (
-    <div className={cn('flex min-w-0 flex-col gap-0.5 border-line px-4 py-2.5', className)}>
+    <div className={cn('flex min-w-0 flex-col gap-0.5 border-line bg-surface px-4 py-2.5 sm:border-r', className)}>
       <span className="condensed text-2xs font-medium uppercase tracking-[0.05em] text-ink-3">{label}</span>
       <span className={cn('num truncate', big ? 'text-[26px] font-medium leading-8 tracking-[-0.01em]' : 'text-[15px] leading-6')}>
         {children}
@@ -35,8 +35,9 @@ function Cell({
 export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapshot; actions?: ReactNode }) {
   const { totals: t, baseCurrency: ccy } = snapshot;
   return (
-    <div className="flex flex-wrap items-stretch rounded-md border border-line bg-surface [&>*]:border-r [&>*:last-child]:border-r-0">
-      <Cell label={`Portfolio value · ${ccy}`} big className="basis-full border-b !border-r-0 sm:basis-auto sm:border-b-0 sm:!border-r">
+    // Phones: a 2-column grid whose 1px gaps draw the hairlines. Wider: one row with right borders.
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:flex sm:flex-wrap sm:gap-0 sm:bg-surface">
+      <Cell label={`Portfolio value · ${ccy}`} big className="col-span-2">
         {money(t.value, ccy, 0)}
       </Cell>
       <Cell label="Invested">{money(t.costBasis, ccy, 0)}</Cell>
@@ -52,7 +53,9 @@ export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapsho
       <Cell label="Today" className="text-ink-2" sub={moneyDelta(t.dayChange, ccy, 0)}>
         <span className={cn('text-[13px]', toneClass(t.dayChange))}>{pct(t.dayChangePct)}</span>
       </Cell>
-      {actions ? <div className="ml-auto flex items-center gap-2 px-3 py-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex items-center justify-end gap-2 bg-surface px-3 py-2 sm:ml-auto">{actions}</div>
+      ) : null}
     </div>
   );
 }

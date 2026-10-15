@@ -32,7 +32,7 @@ function Row({ h, base, variant }: { h: Holding; base: string; variant: Variant 
           <Td wide className="num text-ink-2">{h.quoteCurrency ?? h.tradeCurrency}</Td>
         </>
       ) : null}
-      <Td numeric>{qty(h.quantity)}</Td>
+      <Td numeric wide={!full}>{qty(h.quantity)}</Td>
       <Td numeric wide className="text-ink-2">{price(h.avgCost, h.tradeCurrency ?? base)}</Td>
       <Td numeric wide>{price(h.price, h.quoteCurrency ?? base)}</Td>
       {full ? (
@@ -100,7 +100,7 @@ export function HoldingsTable({
               <Th wide>Ccy</Th>
             </>
           ) : null}
-          <Th numeric>Qty</Th>
+          <Th numeric wide={!full}>Qty</Th>
           <Th numeric wide>Avg cost</Th>
           <Th numeric wide>LTP</Th>
           {full ? <Th wide className="px-1">Intraday</Th> : null}
