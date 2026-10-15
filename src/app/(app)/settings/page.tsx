@@ -2,40 +2,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
 import { FadeIn } from '@/components/ui/fade-in';
-
-function normalizePlatforms(raw: string[] | null | undefined): string[] {
-  const items = (raw ?? []).map((s) => String(s).trim()).filter(Boolean);
-
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const p of items) {
-    const key = p.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(p);
-    }
-  }
-
-  return out.length ? out : ['Manual'];
-}
+import { currencySchema, isoCurrencies, normalizePlatforms } from '@/lib/settings';
 
 function normalizePlatformsFromTextarea(raw: string): string[] {
-  const lines = raw
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const p of lines) {
-    const key = p.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(p);
-    }
-  }
-
-  return out.length ? out : ['Manual'];
+  return normalizePlatforms(raw.split(/\r?\n/));
 }
 
 export default async function SettingsPage() {
@@ -56,16 +26,17 @@ export default async function SettingsPage() {
     );
   }
 
-  const current = String(userSettings?.base_currency ?? 'USD').toUpperCase();
-  const baseCcy = (current === 'INR' ? 'INR' : 'USD') as 'USD' | 'INR';
+  const baseCcy = String(userSettings?.base_currency ?? 'USD').toUpperCase();
+  const currencyOptions = isoCurrencies();
 
   const platforms = normalizePlatforms(userSettings?.platforms as string[] | null | undefined);
   const platformsText = platforms.join('\n');
 
   async function setBaseCurrency(formData: FormData) {
     'use server';
-    const next = String(formData.get('baseCurrency') ?? 'USD').toUpperCase();
-    const value = (next === 'INR' ? 'INR' : 'USD') as 'USD' | 'INR';
+    const parsed = currencySchema.safeParse(formData.get('baseCurrency'));
+    if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Invalid currency');
+    const value = parsed.data;
 
     const supabase = await supabaseServer();
     const { data: auth } = await supabase.auth.getUser();
@@ -127,8 +98,11 @@ export default async function SettingsPage() {
                 defaultValue={baseCcy}
                 className="h-9 w-[120px] appearance-none rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white"
               >
-                <option value="USD">USD</option>
-                <option value="INR">INR</option>
+                {currencyOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>

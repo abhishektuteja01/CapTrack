@@ -1,0 +1,28 @@
+name: Market data
+
+on:
+  schedule:
+    # 16:30 UTC on weekdays: after the ECB publishes and after Indian markets close
+    - cron: '30 16 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: market-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Refresh fx_rates and price_history
+        run: npx -y tsx@4.19.2 scripts/refresh-market-data.ts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

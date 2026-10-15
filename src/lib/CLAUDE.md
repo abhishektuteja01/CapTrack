@@ -26,9 +26,16 @@
 
 - `bootstrap.ts` — `ensureUserBootstrap(userId)` ensures a `user_settings` row exists with defaults (USD base currency, Manual platform). Safe to call multiple times (upsert semantics). Called on dashboard load.
 
+## Portfolio
+
+- `portfolio.ts` — `getPortfolio(supabase, opts)` builds the dashboard snapshot (holdings, closed positions, totals, allocation, history, XIRR) in the base currency. See `src/app/CLAUDE.md`.
+- `settings.ts` — `normalizePlatforms()`, `isoCurrencies()`, and zod schemas for base currency and platforms.
+- `supabase/service.ts` — service-role client for shared market data writes. Server only; `null` without `SUPABASE_SERVICE_ROLE_KEY`.
+
 ## Utilities
 
 - `utils.ts` — `cn()` combines `clsx` + `tailwind-merge` for conditional classNames.
+- `format.ts` — every number in the UI: `money()` (locale per currency, ₹ uses Indian grouping), `moneyDelta()`, `pct()`, `qty()`, `price()`, `compactMoney()`. True minus sign, explicit +, "—" for unknown. Don't write local formatters.
 
 ## Key Conventions
 

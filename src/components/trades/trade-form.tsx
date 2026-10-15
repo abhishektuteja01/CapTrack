@@ -115,15 +115,15 @@ export default function TradeForm({ editTrade, platforms }: Props) {
             onSelect={(s: SymbolSuggestion) => {
               setSymbol(s.symbol);
               markTouched('asset');
-              setAssetType(s.type);
-              // Infer currency (v1 rules)
-              if (s.type === 'crypto') {
-                setCurrency('USD');
-              } else if (s.symbol.endsWith('.NS')) {
-                setCurrency('INR');
-              } else {
-                setCurrency('USD');
-              }
+              const type = s.type === 'fund' ? 'mutual_fund' : s.type === 'other' ? 'stock' : s.type;
+              setAssetType(type);
+              // Use the currency Yahoo actually quotes this symbol in; keep the current value if unavailable.
+              fetch(`/api/quote?symbol=${encodeURIComponent(s.symbol)}&type=${type}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .then((q: { currency?: string } | null) => {
+                  if (q?.currency) setCurrency(q.currency);
+                })
+                .catch(() => {});
             }}
           />
           <input type="hidden" name="symbol" value={symbol} />
@@ -220,13 +220,13 @@ export default function TradeForm({ editTrade, platforms }: Props) {
           <div className="space-y-1.5">
             <label className={labelClass}>Currency</label>
             <input
+              name="currency"
               value={currency}
-              readOnly
-              aria-readonly="true"
-              className={`${inputClass} bg-zinc-100 text-zinc-500 cursor-not-allowed`}
+              onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
+              maxLength={3}
+              className={inputClass}
             />
-            <input type="hidden" name="currency" value={currency} />
-            <p className="text-[10px] text-zinc-500">Auto-filled based on symbol.</p>
+            <p className="text-[10px] text-zinc-500">Filled from the symbol&apos;s quote. Change it if your trade settled in another currency.</p>
             {fieldErr('currency')?.map((e) => <div key={e} className={errorClass}>{e}</div>)}
           </div>
         </div>

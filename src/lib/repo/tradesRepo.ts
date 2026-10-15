@@ -20,6 +20,9 @@ export type TradesUpsertPayload = {
 
   source: string;
   notes: string | null;
+
+  fx_rate?: number | null;
+  fx_quote?: string | null;
 };
 
 export async function upsertTrade(args: {

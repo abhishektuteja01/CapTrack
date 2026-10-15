@@ -12,7 +12,7 @@ type ActionState =
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
 
 function toNumber(value: FormDataEntryValue | null): number | undefined {
-  if (value == null) return undefined;
+  if (value == null || value.toString().trim() === '') return undefined;
   const n = Number(value.toString());
   return Number.isFinite(n) ? n : undefined;
 }
@@ -54,7 +54,9 @@ export async function createTradeAction(
     price: toNumber(formData.get('price')),
     fees: toNumber(formData.get('fees')) ?? 0,
 
-    currency: toStringVal(formData.get('currency')) ?? 'USD',
+    currency: toStringVal(formData.get('currency')),
+    fxRate: toNumber(formData.get('fxRate')),
+    fxQuote: toStringVal(formData.get('fxQuote')),
 
     platform: toStringVal(formData.get('platform')) ?? 'Manual',
 
@@ -90,6 +92,9 @@ export async function createTradeAction(
 
     source: trade.source,
     notes: trade.notes ?? null,
+
+    // Only sent when the user overrides the rate, so older schemas without these columns keep working.
+    ...(trade.fxRate ? { fx_rate: trade.fxRate, fx_quote: trade.fxQuote ?? null } : {}),
   };
 
   const res = await upsertTrade({

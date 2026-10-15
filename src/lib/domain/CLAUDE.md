@@ -6,26 +6,30 @@ Pure business logic with **no framework or database dependencies**. Import nothi
 
 `portfolio/positions.ts` exports:
 
-- **`derivePositions(trades, opts?)`** — Takes a list of `TradeLike` objects, returns `Position[]`.
-  - Sorts trades by `occurredAt` ascending
-  - Uses **average-cost method**: BUY increases qty and cost basis, SELL reduces both proportionally
-  - `sellBehavior` option: `'clamp'` (default, no negative positions) or `'allow_negative'`
-  - Filters out zero-quantity positions, returns sorted by asset type then symbol
+- **`derivePositions(trades, opts?)`** — Takes `TradeLike[]`, returns `Position[]`.
+  - Sorts trades by `occurredAt` ascending; **average-cost method**
+  - SELL books realized P&L: `soldQty*price − sellFees − soldQty*avgCost`
+  - `baseCurrency` + `fx` (an `FxLookup`) also track `costBasisBase` / `realizedBase` at trade-date FX; a trade's `fxRate`/`fxQuote` override wins when it quotes the base currency. Base fields are `undefined` if any rate was missing.
+  - `includeClosed` keeps fully sold positions (`closed: true`); default drops them
+  - `sellBehavior`: `'clamp'` (default) or `'allow_negative'`
+- **`applyTrade(ledger, trade, rateToBase)`** — the single-trade step, shared with history replay.
+- **`getPositionForAsset(positions, asset)`** — Lookup helper.
 
-- **`getPositionForAsset(positions, asset)`** — Lookup helper for a single asset.
+## History and returns
 
-## Types (defined in this file, not in types/)
+- `portfolio/history.ts` — `buildHistory()` replays trades over daily closes + FX into `{date, value, costBasis, partial}` per day in the base currency. `portfolioCashFlows()` builds XIRR flows.
+- `portfolio/xirr.ts` — `xirr(flows)` by bisection; returns a ratio (0.12 = 12%) or `undefined`.
 
-- `TradeLike` — Minimal trade shape needed for derivation (occurredAt, asset, side, quantity, price, fees?, currency?)
-- `Position` — Derived holding (asset, quantity, avgCost, costBasis, totalFees, currency)
-- `DerivePositionsOptions` — { sellBehavior?, defaultFees? }
+## FX
+
+- `fx/rates.ts` — Rates are stored as USD per 1 unit; `makeFxLookup(rows)` converts any pair through USD using the latest rate on or before the date. `normalizeCurrency()` maps minor units (GBp, ZAc, ILA) to major units.
 
 ## Testing
 
-Tests live in `portfolio/__tests__/positions.test.ts` using Vitest.
+Tests live in `portfolio/__tests__/` and `fx/__tests__/` (Vitest).
 
 ```bash
-npx vitest run src/lib/domain/portfolio/__tests__/positions.test.ts
+npx vitest run src/lib/domain
 ```
 
 When modifying position logic, always run this test file. Add test cases for any new edge cases.

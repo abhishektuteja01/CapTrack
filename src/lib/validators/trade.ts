@@ -71,6 +71,16 @@ export const tradeSchema = z.object({
     .length(3, 'Currency must be a 3-letter ISO code')
     .transform((c) => c.toUpperCase()),
 
+  /** Rate the broker used: 1 unit of `currency` = fxRate units of fxQuote. Optional. */
+  fxRate: z.number().positive('Rate must be greater than 0').optional(),
+
+  fxQuote: z
+    .string()
+    .trim()
+    .length(3, 'Currency must be a 3-letter ISO code')
+    .transform((c) => c.toUpperCase())
+    .optional(),
+
   platform: z
     .preprocess(
       (v) => (v === undefined || v === null || String(v).trim() === '' ? 'Manual' : v),
