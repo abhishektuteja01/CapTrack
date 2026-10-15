@@ -16,7 +16,8 @@ npx vitest run <path>  # Run a single test file
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   # falls back to legacy NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SECRET_KEY                    # server only; writes shared market data. Falls back to SUPABASE_SERVICE_ROLE_KEY
 ```
 
 ## High-Level Architecture
@@ -41,5 +42,8 @@ Security is enforced at the DB layer via RLS — `auth.uid() = user_id` on all t
 
 ## Data Models
 
-- `trades` — id, user_id, asset metadata, quantity, price, fees, currency, platform, source, notes
-- `user_settings` — user_id, base_currency (USD/INR), platforms[]
+- `trades` — id, user_id, asset metadata, quantity, price, fees, currency (any ISO code), fx_rate/fx_quote (optional broker rate), platform, source, notes
+- `user_settings` — user_id, base_currency (any ISO code), platforms[]
+- `fx_rates`, `price_history` — shared daily market data, read by users, written by the service role
+
+Migrations live in `supabase/migrations/`; run them in the Supabase SQL editor.

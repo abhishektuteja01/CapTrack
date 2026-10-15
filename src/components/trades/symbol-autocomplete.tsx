@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export type SymbolSuggestion = {
   symbol: string;
@@ -9,111 +10,143 @@ export type SymbolSuggestion = {
   exchange?: string;
 };
 
+/**
+ * Symbol input with Yahoo suggestions. Typing alone is a valid value; picking a suggestion
+ * also fills the asset type and currency. Arrow keys move, Enter picks, Escape closes.
+ */
 export default function SymbolAutocomplete({
+  id,
   value,
+  onChange,
   onSelect,
+  invalid,
 }: {
-  value?: string;
+  id?: string;
+  value: string;
+  onChange: (text: string) => void;
   onSelect: (s: SymbolSuggestion) => void;
+  invalid?: boolean;
 }) {
-  const [query, setQuery] = useState(value ?? '');
   const [results, setResults] = useState<SymbolSuggestion[]>([]);
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
   const [loading, setLoading] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
-  const justSelectedRef = useRef(false);
-  const programmaticSetRef = useRef(false);
+  const typed = useRef(false);
+  const listId = useId();
 
   useEffect(() => {
-    programmaticSetRef.current = true;
-    setQuery(value ?? '');
-  }, [value]);
-
-  useEffect(() => {
-    if (justSelectedRef.current) {
-      justSelectedRef.current = false;
-      return;
-    }
-
-    if (programmaticSetRef.current) {
-      programmaticSetRef.current = false;
-      setOpen(false);
-      return;
-    }
-
-    if (!query || query.length < 1) {
-      setResults([]);
-      setOpen(false);
-      return;
-    }
-
+    // Only search after the user types, not when a value is set programmatically.
+    if (!typed.current) return;
+    const q = value.trim();
+    if (!q) return;
     const ctrl = new AbortController();
-    abortRef.current?.abort();
-    abortRef.current = ctrl;
-
-    setLoading(true);
-
     const t = setTimeout(async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`/api/symbols?q=${encodeURIComponent(query)}`, {
-          signal: ctrl.signal,
-        });
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
         const json = (await res.json()) as SymbolSuggestion[];
         setResults(json);
+        setActive(-1);
         setOpen(true);
       } catch {
-        // ignore aborts / network errors
+        // aborted or offline: keep what the user typed
       } finally {
         setLoading(false);
       }
-    }, 300); // debounce
+    }, 250);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [value]);
 
-    return () => clearTimeout(t);
-  }, [query]);
+  function pick(s: SymbolSuggestion) {
+    typed.current = false;
+    setOpen(false);
+    setResults([]);
+    onSelect(s);
+  }
+
+  const showList = open && value.trim() !== '' && (loading || results.length > 0);
 
   return (
     <div className="relative">
       <input
+        id={id}
         type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Start typing a symbol (AAPL, BTC, SPY…)"
-        className="w-full rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-zinc-900 focus:bg-white focus:ring-1 focus:ring-zinc-900"
+        role="combobox"
+        aria-expanded={showList}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
+        aria-invalid={invalid || undefined}
+        autoComplete="off"
+        spellCheck={false}
+        value={value}
+        onChange={(e) => {
+          typed.current = true;
+          const text = e.target.value.toUpperCase();
+          if (!text.trim()) {
+            setResults([]);
+            setOpen(false);
+          }
+          onChange(text);
+        }}
+        onKeyDown={(e) => {
+          if (!showList) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActive((a) => Math.min(results.length - 1, a + 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActive((a) => Math.max(0, a - 1));
+          } else if (e.key === 'Enter' && active >= 0) {
+            e.preventDefault();
+            pick(results[active]);
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
         onFocus={() => results.length && setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        placeholder="AAPL, RELIANCE.NS, BTC…"
+        className={cn(inputClass, 'num uppercase placeholder:normal-case')}
       />
-
-      {open && (loading || results.length > 0) ? (
-        <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white/95 shadow-lg ring-1 ring-zinc-200 backdrop-blur-xl">
-          {loading ? (
-            <div className="px-4 py-3 text-xs text-zinc-500">Searching…</div>
-          ) : (
-            results.map((r) => (
-              <button
-                key={`${r.symbol}-${r.exchange ?? ''}`}
-                type="button"
-                onClick={() => {
-                  justSelectedRef.current = true;
-                  setResults([]);
-                  setOpen(false);
-                  setQuery(r.symbol);
-                  onSelect(r);
-                }}
-                className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-100/50"
-              >
-                <div>
-                  <div className="font-semibold text-zinc-900">{r.symbol}</div>
-                  <div className="text-xs text-zinc-500">{r.name}</div>
-                </div>
-                <div className="text-right text-xs text-zinc-400">
-                  <div className="uppercase tracking-wider">{r.type}</div>
-                  {r.exchange ? <div>{r.exchange}</div> : null}
-                </div>
-              </button>
-            ))
-          )}
-        </div>
+      {showList ? (
+        <ul
+          id={listId}
+          role="listbox"
+          className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-md border border-line bg-surface py-1"
+        >
+          {loading && !results.length ? <li className="px-3 py-2 text-2xs text-ink-3">Searching…</li> : null}
+          {results.map((r, i) => (
+            <li
+              key={`${r.symbol}-${r.exchange ?? ''}`}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={i === active}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                pick(r);
+              }}
+              onMouseEnter={() => setActive(i)}
+              className={cn(
+                'flex cursor-default items-baseline justify-between gap-3 px-3 py-1.5',
+                i === active && 'bg-subtle'
+              )}
+            >
+              <span className="min-w-0">
+                <span className="num text-[13px] font-semibold">{r.symbol}</span>
+                <span className="ml-2 truncate text-2xs text-ink-3">{r.name}</span>
+              </span>
+              <span className="shrink-0 text-2xs text-ink-3">{[r.exchange, r.type].filter(Boolean).join(' · ')}</span>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </div>
   );
 }
+
+export const inputClass =
+  'h-8 w-full rounded-md border border-line-strong bg-surface px-2.5 text-[13px] text-ink outline-none placeholder:text-ink-3 focus:border-accent focus:ring-1 focus:ring-accent aria-[invalid=true]:border-neg';

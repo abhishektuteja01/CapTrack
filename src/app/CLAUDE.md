@@ -16,16 +16,20 @@
 
 ## Server Actions
 
-Server actions live in `(app)/trades/actions.ts`:
-- `createTradeAction` — validates with Zod, calls `upsertTrade()`, revalidates `/trades` and `/dashboard`
-- `deleteTradeAction` — calls `deleteTrade()`, revalidates both paths
-- Both get `user_id` from `getUser()` server-side — **never from form data**
+- `(app)/trades/actions.ts` — `saveTradeAction` (create/edit, Zod, adds a new platform to settings, redirects to `returnTo`), `deleteTradeAction`. The form sends `occurredAt` as an ISO timestamp built in the browser so time zones are right.
+- `(app)/settings/actions.ts` — base currency, platforms (renames update trades), display name, and first-run setup. Return `{ ok, message }` for inline status.
+- `user_id` always comes from the server session, never from form data. `returnTo` only accepts same-site paths.
+
+## Trades UI
+
+`/trades` lists trades (50 per page, filters in the URL). `?new=1` and `?edit=<id>` open the side panel; `/trades/new?from=…` and `/trades/[id]/edit` are full-page fallbacks.
 
 ## Dashboard Data Flow
 
-1. Fetch all trades for `user.id`
-2. Filter by platform query param if present
-3. `derivePositions()` calculates holdings (pure function)
-4. `fetchYahooPrices()` gets live quotes
-5. FX conversion to base currency (USD or INR) via `getUsdInrRateCached()`
-6. Render totals and per-position P&L in base currency
+`getPortfolio(supabase, { platform?, withHistory? })` in `src/lib/portfolio.ts` does all of it:
+1. Load settings and every trade (RLS scopes to the user)
+2. Live quotes for open positions (`fetchYahooPrices`)
+3. FX for every currency involved, from the first trade to today (`loadUsdRates`)
+4. `derivePositions()` with base currency: cost basis and realized P&L at trade-date FX
+5. Splits (Yahoo events + detected 1/n price jumps) adjust quantities and avg cost; value at today's rate; holdings without a quote or rate are listed in `missingQuotes` / `missingFx`, never silently dropped
+6. Allocation, daily history (`buildHistory`) and XIRR

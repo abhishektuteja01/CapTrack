@@ -29,7 +29,7 @@ export const tradeSourceSchema = z.enum([
  */
 export const assetRefSchema = z.object({
   symbol: z
-    .string()
+    .string({ error: 'Enter a symbol' })
     .trim()
     .min(1, 'Symbol is required')
     .transform((s) => s.toUpperCase()),
@@ -45,31 +45,41 @@ export const assetRefSchema = z.object({
  */
 export const tradeSchema = z.object({
   occurredAt: z
-    .string()
-    .refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid ISO timestamp'),
+    .string({ error: 'Pick a date' })
+    .refine((v) => !Number.isNaN(Date.parse(v)), 'Pick a valid date'),
 
   asset: assetRefSchema,
 
   side: tradeSideSchema,
 
   quantity: z
-    .number()
+    .number({ error: 'Enter a quantity' })
     .positive('Quantity must be greater than 0'),
 
   price: z
-    .number()
+    .number({ error: 'Enter the price per unit' })
     .nonnegative('Price cannot be negative'),
 
   fees: z
-    .number()
+    .number({ error: 'Enter fees as a number' })
     .nonnegative('Fees cannot be negative')
     .default(0),
 
   currency: z
+    .string({ error: 'Enter a currency code' })
+    .trim()
+    .length(3, 'Use a 3-letter code like USD or INR')
+    .transform((c) => c.toUpperCase()),
+
+  /** Rate the broker used: 1 unit of `currency` = fxRate units of fxQuote. Optional. */
+  fxRate: z.number().positive('Rate must be greater than 0').optional(),
+
+  fxQuote: z
     .string()
     .trim()
     .length(3, 'Currency must be a 3-letter ISO code')
-    .transform((c) => c.toUpperCase()),
+    .transform((c) => c.toUpperCase())
+    .optional(),
 
   platform: z
     .preprocess(

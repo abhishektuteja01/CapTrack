@@ -1,73 +1,56 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import * as Menu from '@radix-ui/react-dropdown-menu';
 
 type UserMenuProps = {
-  user: {
-    email?: string | null;
-    user_metadata?: Record<string, unknown>;
-  };
+  name: string;
+  email?: string | null;
+  compact?: boolean;
 };
 
-export default function UserMenu({ user }: UserMenuProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement | null>(null);
+const item =
+  'block cursor-default rounded-sm px-2.5 py-1.5 text-[13px] text-ink outline-none data-[highlighted]:bg-subtle';
 
-  const metadata = user.user_metadata ?? {};
-  const displayName =
-    typeof metadata.display_name === 'string'
-      ? metadata.display_name
-      : typeof metadata.full_name === 'string'
-        ? metadata.full_name
-        : user.email?.split('@')[0] ?? 'User';
-
-  const firstName = displayName.split(' ')[0];
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+export default function UserMenu({ name, email, compact }: UserMenuProps) {
   return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="rounded-full px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors"
-        aria-haspopup="menu"
-        aria-expanded={open}
+    <Menu.Root>
+      <Menu.Trigger
+        className={
+          compact
+            ? 'rounded-md px-2 py-1 text-[13px] text-ink-2 hover:bg-subtle'
+            : 'flex w-full flex-col items-start rounded-md px-4 py-2 text-left hover:bg-hover'
+        }
       >
-        Hi, {firstName}
-      </button>
-
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 mt-2 w-40 rounded-md border border-zinc-200 bg-white shadow-sm"
+        {compact ? (
+          name
+        ) : (
+          <>
+            <span className="text-[13px] font-medium text-ink">{name}</span>
+            {email ? <span className="max-w-full truncate text-2xs text-ink-3">{email}</span> : null}
+          </>
+        )}
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Content
+          align={compact ? 'end' : 'start'}
+          side={compact ? 'bottom' : 'top'}
+          sideOffset={4}
+          className="z-50 min-w-44 rounded-md border border-line bg-surface p-1"
         >
-          <Link
-            href="/settings"
-            role="menuitem"
-            className="block px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
-            onClick={() => setOpen(false)}
-          >
-            Settings
-          </Link>
-
-          <a
-            href="/auth/logout"
-            role="menuitem"
-            className="block px-3 py-2 text-sm text-red-600 hover:bg-zinc-100"
-          >
-            Logout
-          </a>
-        </div>
-      )}
-    </div>
+          <Menu.Item asChild>
+            <Link href="/settings" className={item}>
+              Settings
+            </Link>
+          </Menu.Item>
+          <Menu.Separator className="my-1 h-px bg-line" />
+          <Menu.Item asChild>
+            <a href="/auth/logout" className={item}>
+              Sign out
+            </a>
+          </Menu.Item>
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }

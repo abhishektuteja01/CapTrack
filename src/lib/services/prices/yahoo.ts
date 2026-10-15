@@ -1,18 +1,28 @@
 // src/lib/services/prices/yahoo.ts
 // Yahoo Finance price service (stocks + crypto via *-USD symbols)
-// No API keys required. Uses public chart endpoint.
+// No API keys required. Uses the public chart endpoint, which is unofficial:
+// every caller must handle failures.
+
+import { normalizeCurrency } from '@/lib/domain/fx/rates';
+import type { PricePoint } from '@/lib/domain/portfolio/history';
+import type { Split } from '@/lib/domain/portfolio/splits';
 
 export type YahooQuote = {
   symbol: string;
   /** Best-effort display name from Yahoo chart meta (shortName/longName). */
   name?: string;
+  /** Latest price in major units of `currency` (pence are converted to pounds). */
   price: number;
+  /** ISO 4217, major unit. */
   currency: string;
-  /** Previous close (best effort) from Yahoo chart meta. */
+  /** Previous close (best effort), same units as `price`. */
   previousClose?: number;
   /** Regular market change percent (best effort) as a percent value, e.g. 1.23 means +1.23%. */
   dayChangePercent?: number;
   timestamp: number; // unix ms
+  exchange?: string;
+  /** Today's intraday closes (1-minute), same units as `price`. */
+  intraday: number[];
 };
 
 export class YahooPriceError extends Error {
@@ -44,6 +54,9 @@ type YahooChartMeta = {
   currency?: string;
   shortName?: string;
   longName?: string;
+  exchangeName?: string;
+  fullExchangeName?: string;
+  gmtoffset?: number;
   previousClose?: number;
   chartPreviousClose?: number;
   regularMarketPreviousClose?: number;
@@ -52,6 +65,9 @@ type YahooChartMeta = {
 
 type YahooChartResult = {
   meta?: YahooChartMeta;
+  events?: {
+    splits?: Record<string, { date: number; numerator: number; denominator: number }>;
+  };
   timestamp?: number[];
   indicators?: {
     quote?: Array<{
@@ -60,32 +76,20 @@ type YahooChartResult = {
   };
 };
 
-function isYahooChartResult(value: unknown): value is YahooChartResult {
-  return typeof value === 'object' && value !== null;
-}
-
-/**
- * Fetch the latest price for a single symbol from Yahoo Finance.
- * Uses the public chart endpoint with 1d/1m resolution.
- */
-export async function fetchYahooPrice(
-  symbol: string,
-  assetType?: string
-): Promise<YahooQuote> {
-  const yahooSymbol = toYahooSymbol(symbol, assetType);
-
-  // FX symbols (e.g., USDINR=X) can intermittently return empty 1m data.
-  // Use a slightly wider range + daily interval for robustness.
-  const range = assetType === 'fx' ? '5d' : '1d';
-  const interval = assetType === 'fx' ? '1d' : '1m';
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?range=${range}&interval=${interval}`;
+/** Fetch and parse one chart result. Throws YahooPriceError on any failure. */
+async function fetchChart(
+  yahooSymbol: string,
+  query: string,
+  revalidate: number
+): Promise<YahooChartResult> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?${query}`;
 
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'CapTrack/1.0',
       Accept: 'application/json,text/plain,*/*',
     },
-    next: { revalidate: 60 },
+    next: { revalidate },
   });
 
   const raw = await res.text();
@@ -107,81 +111,67 @@ export async function fetchYahooPrice(
     json = JSON.parse(raw);
   } catch {
     console.error('[yahoo] JSON parse failed for', yahooSymbol);
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('[yahoo] body snippet:', raw.slice(0, 300));
-    }
     throw new YahooPriceError(`Yahoo JSON parse failed for ${yahooSymbol}`);
   }
 
-  const resultUnknown =
+  const result =
     typeof json === 'object' && json !== null
       ? (json as { chart?: { result?: unknown[] } })?.chart?.result?.[0]
       : undefined;
 
-  const result: YahooChartResult | undefined = isYahooChartResult(resultUnknown)
-    ? (resultUnknown as YahooChartResult)
-    : undefined;
-
-  if (!result) {
+  if (!result || typeof result !== 'object') {
     console.error('[yahoo] no chart result for', yahooSymbol);
-    if (process.env.NODE_ENV !== 'production') {
-      const chart =
-        typeof json === 'object' && json !== null
-          ? (json as { chart?: unknown })?.chart
-          : undefined;
-      console.error('[yahoo] chart payload:', chart);
-    }
     throw new YahooPriceError(`No chart result for ${yahooSymbol}`);
   }
 
+  return result as YahooChartResult;
+}
+
+/**
+ * Fetch the latest price for a single symbol from Yahoo Finance.
+ * Uses the public chart endpoint with 1d/1m resolution.
+ */
+export async function fetchYahooPrice(
+  symbol: string,
+  assetType?: string
+): Promise<YahooQuote> {
+  const yahooSymbol = toYahooSymbol(symbol, assetType);
+
+  // FX symbols (e.g., USDINR=X) can intermittently return empty 1m data.
+  // Use a slightly wider range + daily interval for robustness.
+  const range = assetType === 'fx' ? '5d' : '1d';
+  const interval = assetType === 'fx' ? '1d' : '1m';
+  const result = await fetchChart(yahooSymbol, `range=${range}&interval=${interval}`, 60);
+
   const meta = result.meta;
+  const { currency, factor } = normalizeCurrency(meta?.currency ?? 'USD');
   const previousClose =
     meta?.previousClose ?? meta?.regularMarketPreviousClose ?? meta?.chartPreviousClose;
 
-  const dayChangePercent = meta?.regularMarketChangePercent;
-
   const timestamps: number[] = result.timestamp ?? [];
-  const prices: Array<number | null> = result.indicators?.quote?.[0]?.close ?? [];
-
-  if (!timestamps.length || !prices.length) {
-    console.error('[yahoo] no price data for', yahooSymbol);
-    if (process.env.NODE_ENV !== 'production') {
-      const chartObj =
-        typeof json === 'object' && json !== null
-          ? (json as { chart?: { error?: unknown; result?: unknown[] } }).chart
-          : undefined;
-
-      console.error('[yahoo] details:', {
-        chartError: chartObj?.error,
-        hasResult: Boolean(chartObj?.result?.length),
-        meta: result.meta,
-        range,
-        interval,
-      });
-    }
-    throw new YahooPriceError(`No price data for ${yahooSymbol}`);
-  }
+  const closes: Array<number | null> = result.indicators?.quote?.[0]?.close ?? [];
 
   // Take the latest non-null close
-  let idx = prices.length - 1;
-  while (idx >= 0 && prices[idx] == null) idx--;
+  let idx = closes.length - 1;
+  while (idx >= 0 && closes[idx] == null) idx--;
 
-  if (idx < 0) {
-    throw new YahooPriceError(`All prices null for ${yahooSymbol}`);
+  if (!timestamps.length || idx < 0) {
+    throw new YahooPriceError(`No price data for ${yahooSymbol}`);
   }
 
   return {
     symbol: yahooSymbol,
     name: meta?.shortName ?? meta?.longName,
-    price: (() => {
-      const p = prices[idx];
-      if (p == null) throw new YahooPriceError(`All prices null for ${yahooSymbol}`);
-      return p;
-    })(),
-    currency: meta?.currency ?? 'USD',
-    previousClose: typeof previousClose === 'number' ? previousClose : undefined,
-    dayChangePercent: typeof dayChangePercent === 'number' ? dayChangePercent : undefined,
+    price: (closes[idx] as number) * factor,
+    currency,
+    previousClose: typeof previousClose === 'number' ? previousClose * factor : undefined,
+    dayChangePercent:
+      typeof meta?.regularMarketChangePercent === 'number'
+        ? meta.regularMarketChangePercent
+        : undefined,
     timestamp: timestamps[idx] * 1000,
+    exchange: meta?.fullExchangeName ?? meta?.exchangeName,
+    intraday: closes.filter((c): c is number => c != null).map((c) => c * factor),
   };
 }
 
@@ -212,40 +202,75 @@ export async function fetchYahooPrices(
     .map((r) => r.value);
 }
 
-// --- FX caching (v1) ---
-// Best-effort in-memory cache. On serverless (Vercel), this persists only during warm sessions.
-let usdInrCache: { rate: number; fetchedAt: number } | null = null;
-const USD_INR_TTL_MS = 60 * 60 * 1000; // 1 hour
+/**
+ * Daily closes from `from` (YYYY-MM-DD) to today, in major units, plus reported splits.
+ * Dates are the exchange's local trading day. Closes are as Yahoo returns them (usually split-adjusted).
+ */
+export async function fetchDailyHistory(
+  symbol: string,
+  assetType: string | undefined,
+  from: string
+): Promise<{ symbol: string; currency: string; points: PricePoint[]; splits: Split[] }> {
+  const yahooSymbol = toYahooSymbol(symbol, assetType);
+  const period1 = Math.floor(Date.parse(`${from}T00:00:00Z`) / 1000);
+  const period2 = Math.floor(Date.now() / 1000);
+  const result = await fetchChart(
+    yahooSymbol,
+    `period1=${period1}&period2=${period2}&interval=1d&events=split`,
+    3600
+  );
+
+  const { currency, factor } = normalizeCurrency(result.meta?.currency ?? 'USD');
+  const offset = result.meta?.gmtoffset ?? 0;
+  const timestamps = result.timestamp ?? [];
+  const closes = result.indicators?.quote?.[0]?.close ?? [];
+
+  const byDate = new Map<string, number>();
+  timestamps.forEach((ts, i) => {
+    const c = closes[i];
+    if (c == null || !Number.isFinite(c)) return;
+    const date = new Date((ts + offset) * 1000).toISOString().slice(0, 10);
+    byDate.set(date, c * factor); // a later row for the same day wins
+  });
+
+  const splits: Split[] = Object.values(result.events?.splits ?? {})
+    .filter((e) => e.numerator > 0 && e.denominator > 0)
+    .map((e) => ({
+      date: new Date((e.date + offset) * 1000).toISOString().slice(0, 10),
+      ratio: e.numerator / e.denominator,
+      source: 'yahoo' as const,
+    }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  return {
+    symbol: yahooSymbol,
+    currency,
+    splits,
+    points: Array.from(byDate, ([date, close]) => ({ date, close })).sort((a, b) =>
+      a.date < b.date ? -1 : 1
+    ),
+  };
+}
 
 /**
- * Get USD→INR FX rate (Yahoo symbol: USDINR=X) with a 1-hour TTL cache.
- * Returns undefined if the rate cannot be fetched.
+ * USD per 1 unit of `currency`, latest, from Yahoo (`XXXUSD=X`, falling back to `USDXXX=X` inverted).
+ * Used when the ECB feed doesn't cover a currency.
  */
-export async function getUsdInrRateCached(): Promise<number | undefined> {
-  const now = Date.now();
-  if (usdInrCache && now - usdInrCache.fetchedAt < USD_INR_TTL_MS) {
-    return usdInrCache.rate;
-  }
-
-  // Prefer direct USD → INR
-  const direct = await fetchYahooPrices([{ symbol: 'USDINR=X', assetType: 'fx' }]);
-  const directRate = direct?.[0]?.price;
-
-  if (typeof directRate === 'number' && directRate > 0) {
-    usdInrCache = { rate: directRate, fetchedAt: now };
-    return directRate;
-  }
-
-  // Fallback: INR → USD and invert
-  const reverse = await fetchYahooPrices([{ symbol: 'INRUSD=X', assetType: 'fx' }]);
-  const reverseRate = reverse?.[0]?.price;
-
-  if (typeof reverseRate === 'number' && reverseRate > 0) {
-    const inverted = 1 / reverseRate;
-    usdInrCache = { rate: inverted, fetchedAt: now };
-    return inverted;
-  }
-
-  console.error('[fx] USD/INR unavailable from Yahoo');
+export async function fetchYahooUsdRate(currency: string): Promise<number | undefined> {
+  const ccy = currency.toUpperCase();
+  if (ccy === 'USD') return 1;
+  const [direct] = await fetchYahooPrices([{ symbol: `${ccy}USD=X`, assetType: 'fx' }]);
+  if (direct?.price > 0) return direct.price;
+  const [reverse] = await fetchYahooPrices([{ symbol: `USD${ccy}=X`, assetType: 'fx' }]);
+  if (reverse?.price > 0) return 1 / reverse.price;
   return undefined;
+}
+
+/** Daily USD-per-unit history for `currency` from Yahoo, for currencies the ECB doesn't publish. */
+export async function fetchYahooUsdRateHistory(
+  currency: string,
+  from: string
+): Promise<PricePoint[]> {
+  const h = await fetchDailyHistory(`${currency.toUpperCase()}USD=X`, 'fx', from);
+  return h.points;
 }

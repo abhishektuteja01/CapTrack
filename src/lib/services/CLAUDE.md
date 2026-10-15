@@ -2,28 +2,26 @@
 
 ## Yahoo Finance (`prices/yahoo.ts`)
 
-Fetches live prices from Yahoo Finance's public `/v8/finance/chart` endpoint. No API key required.
+Unofficial public `/v8/finance/chart` endpoint, no key. Every caller must handle failures.
 
-### Key Exports
+- **`fetchYahooPrices(inputs)`** — Latest quotes in parallel, fails soft (returns only successes). Prices are in major units: `GBp` pence become `GBP`. Includes `intraday` closes for sparklines.
+- **`fetchDailyHistory(symbol, type, from)`** — Daily closes since `from`, keyed by the exchange's local date.
+- **`fetchYahooUsdRate` / `fetchYahooUsdRateHistory`** — FX fallback for currencies the ECB doesn't publish.
+- **`toYahooSymbol(symbol, assetType)`** — Crypto gets `-USD` (BTC → BTC-USD).
+- Symbol search lives in `src/app/api/symbols/route.ts`; single quotes for the trade form in `src/app/api/quote/route.ts`.
 
-- **`fetchYahooPrices(inputs)`** — Fetches quotes for multiple symbols in parallel. Each input has `{ symbol, assetType }`. Returns `YahooQuote[]` with price, currency, previousClose, dayChangePercent.
-- **`toYahooSymbol(symbol, assetType)`** — Maps internal symbols to Yahoo format. Crypto gets `-USD` suffix (BTC → BTC-USD). Stocks/ETFs pass through as-is.
-- **`getUsdInrRateCached()`** — Returns cached USD/INR exchange rate. 1-hour TTL to avoid rate jitter on serverless.
+## FX (`fx/frankfurter.ts`)
 
-### Caching (in-memory)
+ECB reference rates via Frankfurter (free, no key, past values never change). About 30 currencies; everything else falls back to Yahoo.
 
-- Symbol search results: 5 minutes
-- Price quotes: 1 minute
-- USD/INR FX rate: 1 hour
+## Market data store (`market/store.ts`)
 
-### Asset Type Handling
+Supabase tables shared by all users (see `supabase/migrations/002_*`):
+- `fx_rates(date, currency, usd_per_unit)` and `price_history(symbol, date, close, currency)`.
+- Signed-in users can read; only the service role writes (`src/lib/supabase/service.ts`, needs `SUPABASE_SECRET_KEY`).
+- **`loadUsdRates(supabase, currencies, from)`** and **`loadPriceHistory(supabase, assets)`** read the tables, fetch only missing or stale ranges, and write them back when the service key is set. Without the key they still return fetched data for the request.
+- `scripts/refresh-market-data.ts` runs the same loaders nightly from `.github/workflows/market-data.yml`.
 
-- **Stocks/ETFs**: 1-minute interval, 1-day range
-- **Crypto**: Uses `BTC-USD` format
-- **FX**: 1-day interval, 5-day range (for reliability)
+## Caching
 
-### Error Handling
-
-- Functions throw `YahooPriceError` on fetch failures.
-- Dashboard catches these and shows positions without LTP (graceful degradation).
-- Individual symbol failures don't block other symbols — each is fetched independently.
+- Quotes: Next fetch cache 60s. Daily history and FX ranges: 1h. Symbol search: 5 min.
