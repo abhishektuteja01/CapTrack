@@ -7,7 +7,7 @@ import type { CostMethod } from '@/lib/domain/portfolio/positions';
 import { money, moneyDelta, price as fmtPrice, qty as fmtQty, rate as fmtRate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { toneClass } from '@/components/ui/num';
-import { cn } from '@/lib/utils';
+import { cn, touch as touchSize } from '@/lib/utils';
 import SymbolAutocomplete, { inputClass, searchContracts, type SymbolSuggestion } from './symbol-autocomplete';
 
 export const ASSET_TYPES = [
@@ -31,6 +31,13 @@ export function toLocalInput(iso: string) {
   const d = new Date(iso);
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
+
+/** Total, error and buttons: pinned to the bottom of the panel on phones so saving never needs a scroll. */
+export const stickyFooter =
+  'flex flex-col gap-4 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-2 max-md:border-t max-md:border-line max-md:bg-surface max-md:px-4 max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:pt-3 [&_[role=alert]]:max-md:order-first [&_[role=alert]]:max-md:col-span-2';
+
+/** The total's own layout: label beside the amount on desktop, label over it in the phone footer. */
+export const footerTotal = 'flex items-baseline justify-between gap-3 border-t border-line pt-3 max-md:flex-col max-md:items-start max-md:gap-0 max-md:border-t-0 max-md:pt-0';
 
 export function Field({
   label,
@@ -289,7 +296,7 @@ export default function TradeForm({
               role="radio"
               aria-checked={side === s}
               onClick={() => setSide(s)}
-              className={cn('h-7 rounded-sm text-[13px] font-medium text-ink-2', side === s && 'bg-ink text-surface')}
+              className={cn('h-7 rounded-sm text-[13px] font-medium text-ink-2 max-md:h-9', side === s && 'bg-ink text-surface')}
             >
               {s === 'BUY' ? 'Buy' : 'Sell'}
             </button>
@@ -478,7 +485,7 @@ export default function TradeForm({
                         setQuantity(String(+(here.quantity * s.f).toFixed(8)));
                         touch('quantity');
                       }}
-                      className="rounded-sm border border-line-strong bg-surface px-1.5 py-0.5 text-ink-2 hover:text-ink"
+                      className={cn('rounded-sm border border-line-strong bg-surface px-1.5 py-0.5 text-ink-2 hover:text-ink', touchSize)}
                     >
                       {s.label}
                     </button>
@@ -613,45 +620,47 @@ export default function TradeForm({
           />
         </Field>
 
-        {/* Live total */}
-        <div className="flex items-baseline justify-between gap-3 border-t border-line pt-3">
-          <span className="flex flex-col text-2xs text-ink-3">
-            <span>
-              {side === 'BUY' ? 'You pay' : 'You receive'}
-              {feesN ? ` (${side === 'BUY' ? 'incl.' : 'after'} fees)` : ''}
-            </span>
-            {estimate !== undefined && priceN > 0 ? (
+        <div className={stickyFooter}>
+          {/* Live total */}
+          <div className={footerTotal}>
+            <span className="flex flex-col text-2xs text-ink-3">
               <span>
-                Profit on this sale ({costMethod === 'fifo' ? 'FIFO' : 'average cost'}){' '}
-                <span className={cn('num', toneClass(estimate))}>{moneyDelta(estimate, currency)}</span>
+                {side === 'BUY' ? 'You pay' : 'You receive'}
+                {feesN ? ` (${side === 'BUY' ? 'incl.' : 'after'} fees)` : ''}
               </span>
-            ) : null}
-          </span>
-          <span className="text-right">
-            <span className="num block text-[15px] font-medium">
-              {/^[A-Z]{3}$/.test(currency) ? money(total, currency) : '—'}
+              {estimate !== undefined && priceN > 0 ? (
+                <span>
+                  Profit on this sale ({costMethod === 'fifo' ? 'FIFO' : 'average cost'}){' '}
+                  <span className={cn('num', toneClass(estimate))}>{moneyDelta(estimate, currency)}</span>
+                </span>
+              ) : null}
             </span>
-            {needsFx && rateUsed ? (
-              <span className="num block text-2xs text-ink-3">≈ {money(total * rateUsed, baseCurrency)}</span>
-            ) : null}
-          </span>
-        </div>
+            <span className="text-right max-md:text-left">
+              <span className="num block text-[15px] font-medium">
+                {/^[A-Z]{3}$/.test(currency) ? money(total, currency) : '—'}
+              </span>
+              {needsFx && rateUsed ? (
+                <span className="num block text-2xs text-ink-3">≈ {money(total * rateUsed, baseCurrency)}</span>
+              ) : null}
+            </span>
+          </div>
 
-        {state && !state.ok && (!state.fieldErrors || Object.keys(state.fieldErrors).some((k) => !edited.has(k))) ? (
-          <p role="alert" className="text-[13px] text-neg">
-            {state.message}
-          </p>
-        ) : null}
-
-        <div className="flex items-center justify-end gap-2">
-          {onCancel ? (
-            <Button variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
+          {state && !state.ok && (!state.fieldErrors || Object.keys(state.fieldErrors).some((k) => !edited.has(k))) ? (
+            <p role="alert" className="text-[13px] text-neg">
+              {state.message}
+            </p>
           ) : null}
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? 'Saving…' : trade ? 'Save changes' : side === 'BUY' ? 'Add buy' : 'Add sell'}
-          </Button>
+
+          <div className="flex items-center justify-end gap-2">
+            {onCancel ? (
+              <Button variant="ghost" onClick={onCancel} className="max-md:hidden">
+                Cancel
+              </Button>
+            ) : null}
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? 'Saving…' : trade ? 'Save changes' : side === 'BUY' ? 'Add buy' : 'Add sell'}
+            </Button>
+          </div>
         </div>
       </form>
 

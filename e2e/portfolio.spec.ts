@@ -98,3 +98,29 @@ test('bulk delete from activity', async ({ page }) => {
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByRole('heading', { name: /Log · 10/ })).toBeVisible({ timeout: 30_000 });
 });
+
+test('phone: pages fit the screen, the tab bar adds and lists open entries', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ['/dashboard', '/holdings', '/holdings/INFY.NS?type=stock', '/trades', '/pnl?year=all', '/settings']) {
+    await page.goto(path, { waitUntil: 'networkidle' });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), path).toBe(0);
+  }
+
+  // The + opens the cash panel over the current page.
+  await page.goto('/holdings', { waitUntil: 'networkidle' });
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Add' }).click();
+  await page.getByRole('menuitem', { name: 'Add cash entry' }).click();
+  await expect(page).toHaveURL(/\/holdings\?cash=new/);
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Add deposit' })).toBeInViewport();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+
+  // Holdings are a list on phones; a row opens the holding.
+  await page.getByRole('link', { name: /INFY\.NS/ }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('INFY.NS');
+
+  // Activity: Select shows checkboxes in place of edit links.
+  await page.goto('/trades', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Select' }).click();
+  await page.locator('li input[type=checkbox]').first().check();
+  await expect(page.getByText('1 selected')).toBeVisible();
+});

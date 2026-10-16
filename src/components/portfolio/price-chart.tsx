@@ -65,7 +65,8 @@ export function PriceChart({ points, marks, currency }: { points: { d: string; c
     <div
       ref={box}
       className="relative mx-3 my-2 outline-none"
-      style={{ height: H }}
+      // pan-y: a sideways drag reads the chart on phones, an up-down one still scrolls the page.
+      style={{ height: H, touchAction: 'pan-y' }}
       tabIndex={0}
       role="img"
       aria-label={last ? `Price ${fmtPrice(last.c, currency)} on ${fmtDate(last.d)}, with ${marks.length} trades marked. Use arrow keys to read other days.` : 'No price history'}

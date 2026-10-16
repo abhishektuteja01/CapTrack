@@ -11,7 +11,7 @@ import { HoldingsTable } from '@/components/portfolio/holdings-table';
 import { StatusBar } from '@/components/portfolio/status-bar';
 import { PlatformFilter } from '@/components/portfolio/platform-filter';
 import { PortfolioNotices } from '@/components/portfolio/notices';
-import { cn } from '@/lib/utils';
+import { cn, touch } from '@/lib/utils';
 
 const GROUPS = [
   { key: undefined, label: 'No grouping' },
@@ -84,7 +84,7 @@ export function DerivativesTable({ rows, base, here }: { rows: Holding[]; base: 
                 {left !== undefined ? <div className="text-2xs text-ink-3">{left > 0 ? `${left}d left` : left === 0 ? 'today' : 'expired'}</div> : null}
               </Td>
               <Td className="text-right">
-                <Link href={close} scroll={false} className="rounded-sm border border-line-strong px-1.5 py-0.5 text-2xs text-ink-2 hover:bg-subtle hover:text-ink">
+                <Link href={close} scroll={false} className={cn('rounded-sm border border-line-strong px-1.5 py-0.5 text-2xs text-ink-2 hover:bg-subtle hover:text-ink', touch)}>
                   Close
                 </Link>
               </Td>
@@ -123,9 +123,9 @@ export function HoldingsView({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-base font-semibold">Holdings</h1>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           <PlatformFilter platforms={snapshot.platforms} current={platform} basePath="/holdings" />
-          <ButtonLink href={sheetHref('/holdings', params, { trade: 'new' })} scroll={false} size="sm" variant="primary">
+          <ButtonLink href={sheetHref('/holdings', params, { trade: 'new' })} scroll={false} size="sm" variant="primary" className="hidden md:inline-flex">
             Add trade
           </ButtonLink>
         </div>
@@ -136,7 +136,7 @@ export function HoldingsView({
       <Panel>
         <PanelHeader
           title={`Open · ${holdings.length}`}
-          meta="click a column to sort"
+          meta={<span className="max-sm:hidden">click a column to sort</span>}
           actions={
             <nav aria-label="Group by" className="flex gap-0.5">
               {GROUPS.map((g) => (
@@ -145,7 +145,7 @@ export function HoldingsView({
                   href={href(g.key)}
                   aria-current={group === g.key ? 'true' : undefined}
                   className={cn(
-                    'rounded-sm px-1.5 py-0.5 text-2xs text-ink-3 hover:text-ink',
+                    'rounded-sm px-1.5 py-0.5 text-2xs text-ink-3 hover:text-ink', touch,
                     group === g.key && 'bg-accent-soft font-medium text-accent'
                   )}
                 >

@@ -54,75 +54,81 @@ export default async function ActivityPage({ searchParams }: { searchParams?: Pr
     rows.map((r) => [`${r.entry}:${r.id}`, sheetHref('/trades', here, r.entry === 'trade' ? { trade: r.id } : { cash: r.id })])
   );
 
+  const header = {
+    total,
+    meta: filtered ? 'filtered' : 'newest first',
+    actions:
+      pages > 1 ? (
+        <nav aria-label="Pages" className="num flex items-center gap-1 text-2xs text-ink-3">
+          {page > 1 ? (
+            <ButtonLink href={listHref(page - 1)} size="sm" variant="ghost">
+              Newer
+            </ButtonLink>
+          ) : null}
+          <span>
+            {page} / {pages}
+          </span>
+          {page < pages ? (
+            <ButtonLink href={listHref(page + 1)} size="sm" variant="ghost">
+              Older
+            </ButtonLink>
+          ) : null}
+        </nav>
+      ) : null,
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-base font-semibold">Activity</h1>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Phones import from the tab bar's + and export from Settings. */}
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
           <TradeFilters platforms={settings.platforms} />
-          <ButtonLink href="/trades/import" size="sm" variant="ghost">
+          <ButtonLink href="/trades/import" size="sm" variant="ghost" className="hidden md:inline-flex">
             Import
           </ButtonLink>
-          <ButtonLink href="/api/export" size="sm" variant="ghost" prefetch={false}>
+          <ButtonLink href="/api/export" size="sm" variant="ghost" className="hidden md:inline-flex" prefetch={false}>
             Export
           </ButtonLink>
-          <ButtonLink href={sheetHref('/trades', here, { cash: 'new' })} scroll={false} size="sm">
+          <ButtonLink href={sheetHref('/trades', here, { cash: 'new' })} scroll={false} size="sm" className="hidden md:inline-flex">
             Add cash
           </ButtonLink>
-          <ButtonLink href={sheetHref('/trades', here, { trade: 'new' })} scroll={false} size="sm" variant="primary">
+          <ButtonLink href={sheetHref('/trades', here, { trade: 'new' })} scroll={false} size="sm" variant="primary" className="hidden md:inline-flex">
             Add trade
           </ButtonLink>
         </div>
       </div>
 
       <Panel>
-        <PanelHeader
-          title={`Log · ${total}`}
-          meta={filtered ? 'filtered' : 'newest first'}
-          actions={
-            pages > 1 ? (
-              <nav aria-label="Pages" className="num flex items-center gap-1 text-2xs text-ink-3">
-                {page > 1 ? (
-                  <ButtonLink href={listHref(page - 1)} size="sm" variant="ghost">
-                    Newer
-                  </ButtonLink>
-                ) : null}
-                <span>
-                  {page} / {pages}
-                </span>
-                {page < pages ? (
-                  <ButtonLink href={listHref(page + 1)} size="sm" variant="ghost">
-                    Older
-                  </ButtonLink>
-                ) : null}
-              </nav>
-            ) : null
-          }
-        />
         {rows.length ? (
-          <ActivityTable rows={rows} editHrefs={editHrefs} />
-        ) : filtered ? (
-          <EmptyState
-            title="Nothing matches these filters"
-            action={
-              <ButtonLink href="/trades" size="sm">
-                Clear filters
-              </ButtonLink>
-            }
-          />
+          <ActivityTable rows={rows} editHrefs={editHrefs} header={header} />
         ) : (
-          <EmptyState
-            title="No activity yet"
-            body="Every buy, sell, deposit and dividend you log here builds your positions, returns and history. Have a broker export? Import it."
-            action={
-              <span className="flex gap-2">
-                <ButtonLink href={sheetHref('/trades', here, { trade: 'new' })} scroll={false} variant="primary">
-                  Add your first trade
-                </ButtonLink>
-                <ButtonLink href="/trades/import">Import a CSV</ButtonLink>
-              </span>
-            }
-          />
+          <>
+            <PanelHeader title={`Log · ${total}`} meta={header.meta} actions={header.actions} />
+            {filtered ? (
+              <EmptyState
+                title="Nothing matches these filters"
+                action={
+                  <ButtonLink href="/trades" size="sm">
+                    Clear filters
+                  </ButtonLink>
+                }
+              />
+            ) : (
+              <EmptyState
+                title="No activity yet"
+                body="Every buy, sell, deposit and dividend you log here builds your positions, returns and history. Have a broker export? Import it."
+                action={
+                  <span className="flex gap-2">
+                    <ButtonLink href={sheetHref('/trades', here, { trade: 'new' })} scroll={false} variant="primary">
+                      Add your first trade
+                    </ButtonLink>
+                    <ButtonLink href="/trades/import">Import a CSV</ButtonLink>
+                  </span>
+                }
+              />
+            )}
+          </>
         )}
       </Panel>
 

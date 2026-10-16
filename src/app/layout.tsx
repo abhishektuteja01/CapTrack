@@ -36,6 +36,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#F4F5F5',
+  // Lets the phone tab bar pad itself clear of the home indicator.
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

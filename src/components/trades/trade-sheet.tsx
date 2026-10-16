@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import type { ComponentProps, ReactNode } from 'react';
 import TradeForm from './trade-form';
 import CashForm from './cash-form';
+import { cn, touch } from '@/lib/utils';
 
 /**
  * Side panel opened by the URL (?trade=… or ?cash=…) so it survives refresh and the back button closes it.
@@ -20,6 +21,12 @@ function Sheet({ title, closeHref, children }: { title: string; closeHref: strin
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[540px] flex-col border-l border-line bg-surface outline-none"
           aria-describedby={undefined}
           onOpenAutoFocus={(e) => {
+            // On touch screens, focusing a field would throw the keyboard over the form before it's read.
+            if (window.matchMedia('(pointer: coarse)').matches) {
+              e.preventDefault();
+              (e.currentTarget as HTMLElement).focus();
+              return;
+            }
             // Start in the first field, not on Close.
             const first = (e.currentTarget as HTMLElement).querySelector<HTMLElement>(
               'select, input[role="combobox"], input:not([type="hidden"])'
@@ -32,8 +39,9 @@ function Sheet({ title, closeHref, children }: { title: string; closeHref: strin
         >
           <div className="flex h-11 items-center justify-between border-b border-line px-4">
             <Dialog.Title className="text-sm font-semibold">{title}</Dialog.Title>
-            <Dialog.Close className="rounded-sm px-2 py-1 text-2xs text-ink-3 hover:bg-subtle hover:text-ink">Close</Dialog.Close>
+            <Dialog.Close className={cn('rounded-sm px-2 py-1 text-2xs text-ink-3 hover:bg-subtle hover:text-ink', touch)}>Close</Dialog.Close>
           </div>
+          {/* Forms pin their total and buttons to the bottom of this on phones (see `stickyFooter`). */}
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children(close)}</div>
         </Dialog.Content>
       </Dialog.Portal>

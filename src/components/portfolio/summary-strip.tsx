@@ -44,7 +44,7 @@ export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapsho
       <Cell
         label={`Value · ${ccy}`}
         big
-        className="col-span-2"
+        className="col-span-2 max-sm:-order-3"
         sub={t.cashValue ? `incl. ${money(t.cashValue, ccy, 0)} cash` : undefined}
       >
         {money(t.value, ccy, 0)}
@@ -56,7 +56,7 @@ export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapsho
       >
         {money(m.netInvested, ccy, 0)}
       </Cell>
-      <Cell label="Total return" title="Unrealized + realized + dividends and interest − charges" sub={t.totalReturnPct !== undefined ? `${pct(t.totalReturnPct)} on money put in` : undefined}>
+      <Cell label="Total return" className="max-sm:-order-1" title="Unrealized + realized + dividends and interest − charges" sub={t.totalReturnPct !== undefined ? `${pct(t.totalReturnPct)} on money put in` : undefined}>
         <span className={toneClass(t.totalReturn)}>{moneyDelta(t.totalReturn, ccy, 0)}</span>
       </Cell>
       <Cell label="Unrealized" sub={pct(t.unrealizedPct)}>
@@ -68,10 +68,12 @@ export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapsho
       <Cell label="XIRR" sub={bench && t.benchmarkXirr !== undefined ? `${bench} ${pct(t.benchmarkXirr, 1, false)}` : 'a year'}>
         {pct(t.xirr, 2, false)}
       </Cell>
-      <Cell label="Today" className={cn('text-ink-2', !actions && 'col-span-2')} sub={moneyDelta(t.dayChange, ccy, 0)}>
-        <span className={cn('text-[13px]', toneClass(t.dayChange))}>{pct(t.dayChangePct)}</span>
+      {/* Phones: today's move sits right under Value, beside total return. */}
+      <Cell label="Today" className="text-ink-2 max-sm:-order-2" sub={moneyDelta(t.dayChange, ccy, 0)}>
+        <span className={cn('text-[13px] max-sm:text-[15px]', toneClass(t.dayChange))}>{pct(t.dayChangePct)}</span>
       </Cell>
-      {actions ? <div className="flex items-center justify-end gap-1 bg-surface px-3 py-2 sm:ml-auto">{actions}</div> : null}
+      {/* Phones add from the tab bar and refresh from the page title. */}
+      {actions ? <div className="hidden items-center justify-end gap-1 bg-surface px-3 py-2 md:ml-auto md:flex">{actions}</div> : null}
     </div>
   );
 }

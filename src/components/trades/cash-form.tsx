@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CASH_KIND_LABELS } from '@/lib/labels';
 import { inputClass } from './symbol-autocomplete';
-import { Field, toLocalInput, useIsClient } from './trade-form';
+import { Field, footerTotal, stickyFooter, toLocalInput, useIsClient } from './trade-form';
 
 
 const HINTS: Record<CashKind, string> = {
@@ -78,7 +78,7 @@ export default function CashForm({
         <input type="hidden" name="occurredAt" value={isoWhen} />
         <input type="hidden" name="assetType" value={assetType} />
 
-        <div role="radiogroup" aria-label="Kind" className="grid grid-cols-5 rounded-md border border-line-strong p-0.5">
+        <div role="radiogroup" aria-label="Kind" className="grid grid-cols-5 rounded-md border border-line-strong p-0.5 max-sm:flex max-sm:flex-wrap">
           {(Object.keys(CASH_KIND_LABELS) as CashKind[]).map((k) => (
             <button
               key={k}
@@ -86,7 +86,7 @@ export default function CashForm({
               role="radio"
               aria-checked={kind === k}
               onClick={() => setKind(k)}
-              className={cn('h-7 rounded-sm text-[12px] font-medium text-ink-2', kind === k && 'bg-ink text-surface')}
+              className={cn('h-7 rounded-sm text-[12px] font-medium text-ink-2 max-md:h-9 max-md:text-[13px] max-sm:flex-1 max-sm:basis-[30%]', kind === k && 'bg-ink text-surface')}
             >
               {CASH_KIND_LABELS[k]}
             </button>
@@ -175,26 +175,28 @@ export default function CashForm({
           <textarea id={`${id}-notes`} name="notes" defaultValue={entry?.notes ?? ''} rows={2} maxLength={500} className={cn(inputClass, 'h-auto py-1.5')} />
         </Field>
 
-        <div className="flex items-baseline justify-between gap-3 border-t border-line pt-3">
-          <span className="text-2xs text-ink-3">{kind === 'withdrawal' || kind === 'fee' ? 'Leaves the account' : 'Into the account'}</span>
-          <span className="num text-[15px] font-medium">{/^[A-Z]{3}$/.test(currency) ? money(Number(amount) || 0, currency) : '—'}</span>
-        </div>
+        <div className={stickyFooter}>
+          <div className={footerTotal}>
+            <span className="text-2xs text-ink-3">{kind === 'withdrawal' || kind === 'fee' ? 'Leaves the account' : 'Into the account'}</span>
+            <span className="num text-[15px] font-medium">{/^[A-Z]{3}$/.test(currency) ? money(Number(amount) || 0, currency) : '—'}</span>
+          </div>
 
-        {state && !state.ok ? (
-          <p role="alert" className="text-[13px] text-neg">
-            {state.message}
-          </p>
-        ) : null}
-
-        <div className="flex items-center justify-end gap-2">
-          {onCancel ? (
-            <Button variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
+          {state && !state.ok ? (
+            <p role="alert" className="text-[13px] text-neg">
+              {state.message}
+            </p>
           ) : null}
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? 'Saving…' : entry ? 'Save changes' : `Add ${CASH_KIND_LABELS[kind].toLowerCase()}`}
-          </Button>
+
+          <div className="flex items-center justify-end gap-2">
+            {onCancel ? (
+              <Button variant="ghost" onClick={onCancel} className="max-md:hidden">
+                Cancel
+              </Button>
+            ) : null}
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? 'Saving…' : entry ? 'Save changes' : `Add ${CASH_KIND_LABELS[kind].toLowerCase()}`}
+            </Button>
+          </div>
         </div>
       </form>
 

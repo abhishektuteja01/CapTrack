@@ -31,19 +31,20 @@ export default function TradeFilters({ platforms }: { platforms: string[] }) {
   }, [q]);
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', pending && 'opacity-70')}>
+    // Phones: search on its own row, the two pickers side by side under it.
+    <div className={cn('flex flex-wrap items-center gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2', pending && 'opacity-70')}>
       <input
         aria-label="Search symbol"
         placeholder="Symbol"
         value={q}
         onChange={(e) => setQ(e.target.value.toUpperCase())}
-        className={cn(inputClass, 'num h-7 w-36 uppercase placeholder:normal-case')}
+        className={cn(inputClass, 'num h-7 w-36 uppercase placeholder:normal-case max-sm:col-span-2 max-sm:w-full')}
       />
       <select
         aria-label="Platform"
         value={params.get('platform') ?? ''}
         onChange={(e) => set({ platform: e.target.value || undefined })}
-        className={cn(inputClass, 'h-7 w-auto')}
+        className={cn(inputClass, 'h-7 w-auto max-sm:w-full')}
       >
         <option value="">All platforms</option>
         {platforms.map((p) => (
@@ -56,7 +57,7 @@ export default function TradeFilters({ platforms }: { platforms: string[] }) {
         aria-label="Kind"
         value={params.get('kind') ?? ''}
         onChange={(e) => set({ kind: e.target.value || undefined })}
-        className={cn(inputClass, 'h-7 w-auto')}
+        className={cn(inputClass, 'h-7 w-auto max-sm:w-full')}
       >
         <option value="">Everything</option>
         <option value="BUY">Buys</option>
