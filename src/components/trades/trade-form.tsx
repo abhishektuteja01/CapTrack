@@ -176,10 +176,11 @@ export default function TradeForm({
     return () => ctrl.abort();
   }, [needsFx, currency, baseCurrency, tradeDay]);
 
-  // A typed symbol (no suggestion picked) still gets its name and currency from the quote.
+  // A typed or pre-filled symbol (no suggestion picked) still gets its name, currency and last price from the quote.
+  const known = Boolean(assetName && lastPrice);
   useEffect(() => {
     const sym = symbol.trim();
-    if (!sym || assetName || derivative || sym === trade?.symbol) return;
+    if (!sym || known || derivative || sym === trade?.symbol) return;
     const ctrl = new AbortController();
     const t = setTimeout(() => {
       fetch(`/api/quote?symbol=${encodeURIComponent(sym)}&type=${assetType}`, { signal: ctrl.signal })
@@ -187,16 +188,16 @@ export default function TradeForm({
         .then((q: { currency?: string; price?: number; name?: string } | null) => {
           if (!q?.currency) return;
           setCurrency(q.currency);
-          if (q.name) setAssetName(q.name);
+          setAssetName((n) => n || q.name || '');
           if (q.price) setLastPrice({ price: q.price, currency: q.currency });
         })
         .catch(() => {});
-    }, 700);
+    }, 300);
     return () => {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [symbol, assetName, assetType, derivative, trade?.symbol]);
+  }, [symbol, known, assetType, derivative, trade?.symbol]);
 
   function onPick(s: SymbolSuggestion) {
     setSymbol(s.symbol);

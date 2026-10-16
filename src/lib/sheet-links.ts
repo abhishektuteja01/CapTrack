@@ -2,8 +2,25 @@
 // The add/edit panels open from the URL on any page (?trade=new, ?trade=<id>, ?cash=new …), so they
 // survive refresh and the back button closes them. These build those links.
 
-/** Params that belong to a panel; everything else is the page's own state (filters, page number). */
-export const SHEET_KEYS = ['trade', 'cash', 'symbol', 'type', 'side', 'platform', 'qty', 'kind', 'amount', 'currency', 'date'] as const;
+/**
+ * Params that belong to a panel; everything else is the page's own state (filters, page number).
+ * Prefill keys start with `f_` so they never collide with a page's own `platform`, `type` or `kind`.
+ */
+export const SHEET_KEYS = ['trade', 'cash', 'f_symbol', 'f_type', 'f_side', 'f_platform', 'f_qty', 'f_kind', 'f_amount', 'f_currency', 'f_date'] as const;
+
+export type SheetOpen = {
+  trade?: string;
+  cash?: string;
+  symbol?: string;
+  type?: string;
+  side?: 'BUY' | 'SELL';
+  platform?: string;
+  qty?: number | string;
+  kind?: string;
+  amount?: number | string;
+  currency?: string;
+  date?: string;
+};
 
 type Params = URLSearchParams | Record<string, string | string[] | undefined>;
 
@@ -24,9 +41,12 @@ export function closeHref(base: string, current: Params = {}) {
 }
 
 /** The page with a panel open, e.g. `{ trade: 'new', side: 'SELL', symbol: 'INFY.NS' }`. */
-export function sheetHref(base: string, current: Params, open: Record<string, string | number | undefined | null>) {
+export function sheetHref(base: string, current: Params, open: SheetOpen) {
   const q = own(current);
-  for (const [k, v] of Object.entries(open)) if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
+  for (const [k, v] of Object.entries(open)) {
+    if (v === undefined || v === null || v === '') continue;
+    q.set(k === 'trade' || k === 'cash' ? k : `f_${k}`, String(v));
+  }
   return `${base}?${q}`;
 }
 

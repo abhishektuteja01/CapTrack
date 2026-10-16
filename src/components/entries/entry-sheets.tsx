@@ -13,8 +13,8 @@ const num = (v: string | undefined) => (v && Number.isFinite(Number(v)) ? Number
 
 /**
  * The add/edit panels for any page, driven by the URL:
- * ?trade=new (with symbol, type, side, platform, qty) or ?trade=<id>; ?cash=new (with kind, symbol,
- * platform, amount, currency, date) or ?cash=<id>. Renders nothing when neither is set.
+ * ?trade=new (with f_symbol, f_type, f_side, f_platform, f_qty) or ?trade=<id>; ?cash=new (with f_kind,
+ * f_symbol, f_platform, f_amount, f_currency, f_date) or ?cash=<id>. Build links with `sheetHref`. Renders nothing when neither is set.
  */
 export async function EntrySheets({ basePath, searchParams }: { basePath: string; searchParams: SearchParams }) {
   const trade = first(searchParams.trade);
@@ -34,39 +34,39 @@ export async function EntrySheets({ basePath, searchParams }: { basePath: string
 
   if (trade) {
     const editing = trade === 'new' ? null : await loadTrade(supabase, trade);
-    const side = first(searchParams.side);
+    const side = first(searchParams.f_side);
     return (
       <TradeSheet
-        key={editing?.id ?? `new-${first(searchParams.symbol) ?? ''}-${side ?? ''}`}
+        key={editing?.id ?? `new-${first(searchParams.f_symbol) ?? ''}-${side ?? ''}`}
         {...common}
         trade={editing ?? undefined}
         costMethod={ledger.settings.costMethod}
         prefill={{
-          symbol: first(searchParams.symbol)?.toUpperCase(),
-          assetType: first(searchParams.type),
+          symbol: first(searchParams.f_symbol)?.toUpperCase(),
+          assetType: first(searchParams.f_type),
           side: side === 'SELL' ? 'SELL' : side === 'BUY' ? 'BUY' : undefined,
-          platform: first(searchParams.platform),
-          quantity: num(first(searchParams.qty)),
+          platform: first(searchParams.f_platform),
+          quantity: num(first(searchParams.f_qty)),
         }}
       />
     );
   }
 
   const editing = cash === 'new' ? null : await loadCash(supabase, cash!);
-  const kind = first(searchParams.kind);
+  const kind = first(searchParams.f_kind);
   return (
     <CashSheet
-      key={editing?.id ?? `new-${kind ?? ''}-${first(searchParams.symbol) ?? ''}`}
+      key={editing?.id ?? `new-${kind ?? ''}-${first(searchParams.f_symbol) ?? ''}`}
       {...common}
       entry={editing ?? undefined}
       prefill={{
         kind: (CASH_KINDS as string[]).includes(kind ?? '') ? (kind as CashKind) : undefined,
-        symbol: first(searchParams.symbol)?.toUpperCase(),
-        assetType: first(searchParams.type),
-        platform: first(searchParams.platform),
-        amount: num(first(searchParams.amount)),
-        currency: first(searchParams.currency)?.toUpperCase(),
-        date: first(searchParams.date),
+        symbol: first(searchParams.f_symbol)?.toUpperCase(),
+        assetType: first(searchParams.f_type),
+        platform: first(searchParams.f_platform),
+        amount: num(first(searchParams.f_amount)),
+        currency: first(searchParams.f_currency)?.toUpperCase(),
+        date: first(searchParams.f_date),
       }}
     />
   );

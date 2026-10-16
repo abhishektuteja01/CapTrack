@@ -14,7 +14,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { toneClass } from '@/components/ui/num';
 import { Table, Td, Th, Tr } from '@/components/ui/table';
 import { EntrySheets } from '@/components/entries/entry-sheets';
-import { CASH_KIND_LABELS } from '@/components/trades/cash-form';
+import { CASH_KIND_LABELS } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';

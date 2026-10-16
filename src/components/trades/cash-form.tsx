@@ -7,16 +7,10 @@ import type { CashKind } from '@/lib/domain/portfolio/money';
 import { money } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CASH_KIND_LABELS } from '@/lib/labels';
 import { inputClass } from './symbol-autocomplete';
 import { Field, toLocalInput, useIsClient } from './trade-form';
 
-export const CASH_KIND_LABELS: Record<CashKind, string> = {
-  deposit: 'Deposit',
-  withdrawal: 'Withdrawal',
-  dividend: 'Dividend',
-  interest: 'Interest',
-  fee: 'Charge',
-};
 
 const HINTS: Record<CashKind, string> = {
   deposit: 'Money added to the platform. Logging deposits turns on a cash balance for it.',

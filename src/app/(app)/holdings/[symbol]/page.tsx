@@ -290,7 +290,9 @@ export default async function HoldingPage({ params, searchParams }: { params: Pa
               {suggestions.map((s) => (
                 <Tr key={`${s.platform}|${s.exDate}`} className="bg-warn-soft/40">
                   <Td className="num text-ink-2">{day(`${s.exDate}T00:00:00Z`)}</Td>
-                  <Td className="text-2xs text-warn">Not logged · {qty(s.quantity)} × {money(s.perShare, s.currency)} on {s.platform}</Td>
+                  <Td className="text-2xs text-warn">
+                    Not logged<span className="hidden sm:inline"> · {qty(s.quantity)} × {money(s.perShare, s.currency)} on {s.platform}</span>
+                  </Td>
                   <Td numeric>{money(s.amount, s.currency)}</Td>
                   <Td className="text-right">
                     <Link

@@ -5,6 +5,8 @@ import { parseFoBhavcopy, unzipFirst, weekdays } from '../nse'
 const CSV = `TradDt,BizDt,Sgmt,Src,FinInstrmTp,FinInstrmId,ISIN,TckrSymb,SctySrs,XpryDt,FininstrmActlXpryDt,StrkPric,OptnTp,FinInstrmNm,OpnPric,HghPric,LwPric,ClsPric,LastPric,PrvsClsgPric,UndrlygPric,SttlmPric,OpnIntrst,ChngInOpnIntrst,TtlTradgVol,TtlTrfVal,TtlNbOfTxsExctd,SsnId,NewBrdLotQty,Rmks,Rsvd1,Rsvd2,Rsvd3,Rsvd4
 2026-10-14,2026-10-14,FO,NSE,IDF,1,,NIFTY,,2026-10-27,2026-10-27,,,NIFTY26OCTFUT,0,0,0,22648.50,0,0,22622.70,22648.50,0,0,0,0,0,F1,65,,,,,
 2026-10-14,2026-10-14,FO,NSE,IDO,2,,NIFTY,,2026-10-19,2026-10-19,20550.00,PE,NIFTY26O1920550PE,0,0,0,1.45,0,0,22622.70,1.40,0,0,0,0,0,F1,65,,,,,
+2026-10-14,2026-10-14,FO,NSE,IDO,3,,NIFTY,,2026-10-14,2026-10-14,22500.00,CE,NIFTY26O1422500CE,0,0,0,215.85,0,0,22721.95,22721.95,0,0,0,0,0,F1,65,,,,,
+2026-10-14,2026-10-14,FO,NSE,IDO,4,,NIFTY,,2026-10-14,2026-10-14,22500.00,PE,NIFTY26O1422500PE,0,0,0,0.30,0,0,22721.95,22721.95,0,0,0,0,0,F1,65,,,,,
 `
 
 /** A one-file zip, as NSE serves it. */
@@ -39,6 +41,11 @@ describe('NSE bhavcopy', () => {
     const rows = parseFoBhavcopy(unzipFirst(zip('fo.csv', Buffer.from(CSV))).toString('utf8'))
     expect(rows.get('NIFTY26OCTFUT')).toMatchObject({ kind: 'future', expiry: '2026-10-27', close: 22648.5, lotSize: 65, underlyingPrice: 22622.7 })
     expect(rows.get('NIFTY26O1920550PE')).toMatchObject({ kind: 'option', strike: 20550, optionType: 'PE', settle: 1.4 })
+  })
+  it('settles expiring options at intrinsic value, not the underlying price NSE lists', () => {
+    const rows = parseFoBhavcopy(CSV)
+    expect(rows.get('NIFTY26O1422500CE')?.settle).toBeCloseTo(221.95)
+    expect(rows.get('NIFTY26O1422500PE')?.settle).toBe(0)
   })
   it('lists weekdays', () => {
     expect(weekdays('2026-10-16', '2026-10-19')).toEqual(['2026-10-16', '2026-10-19'])

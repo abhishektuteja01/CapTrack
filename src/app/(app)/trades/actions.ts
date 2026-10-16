@@ -119,10 +119,9 @@ async function checkSell(t: TradeInput, editingId: string | undefined, others: A
   const oversold = (list: AppTrade[]) => replay(list, { splits, includeClosed: true }).positions.reduce((s, p) => s + p.oversold, 0);
   if (oversold([...same, candidate]) <= oversold(same) + 1e-9) return undefined;
   const held = heldOn(same, t.asset, t.platform, tradeDate(t), splits);
-  const day = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(t.occurredAt));
   return held > 0
-    ? `You held ${fmtQty(held)} on ${t.platform} on ${day}. Sell up to that, or add the missing buy first.`
-    : `No ${t.asset.symbol} on ${t.platform} on ${day}. Add the buy first, or pick the platform you bought on.`;
+    ? `You held ${fmtQty(held)} on ${t.platform} at that date. Sell up to that, or add the missing buy first.`
+    : `No ${t.asset.symbol} on ${t.platform} at that date. Add the buy first, or pick the platform you bought on.`;
 }
 
 /**

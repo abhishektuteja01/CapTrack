@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
 import { Table, Td, Th } from '@/components/ui/table';
 import { inputClass } from './symbol-autocomplete';
-import { CASH_KIND_LABELS } from './cash-form';
+import { CASH_KIND_LABELS } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
 const PREVIEW = 200;

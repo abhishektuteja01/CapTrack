@@ -171,7 +171,7 @@ export function HoldingsTable({
                     <SplitTag h={h} />
                     <Missing h={h} />
                   </div>
-                  {full && h.name ? <div className="truncate text-2xs text-ink-3">{h.name}</div> : null}
+                  {(full || h.type === 'mutual_fund') && h.name ? <div className="truncate text-2xs text-ink-3">{h.name}</div> : null}
                 </Td>
                 {full ? (
                   <>

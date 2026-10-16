@@ -22,9 +22,13 @@
 
 Log trades from any broker in any currency. CapTrack converts each one at the rate on its date and shows holdings, realized and unrealized P&L, XIRR and history in your base currency.
 
-**Real-time data** — Live prices for US stocks, Indian stocks, ETFs, and crypto via Yahoo Finance.
+**Prices** — Live Yahoo quotes for US and Indian stocks, ETFs and crypto; AMFI NAVs for Indian mutual funds; NSE end-of-day settlement prices for futures and options.
 **Multi-currency** — Any currency for trades and for your base. ECB reference rates (Yahoo fallback), converted at each trade's date.
-**Returns** — Realized P&L on sells, XIRR, and a value-vs-invested chart replayed from daily prices. Stock splits applied automatically.
+**Money in and out** — What you put in, took out and still have invested, so profit stays visible after you sell. Optional cash per platform from deposits and withdrawals.
+**Returns** — FIFO or average cost, realized and unrealized P&L, dividends and interest, total return, XIRR, and a value-vs-invested chart against a benchmark index. Splits applied automatically.
+**Tax years** — Every sale with its holding period, short and long term split, grouped by your tax year and exportable as CSV.
+**Futures & options** — NSE contracts with lot sizes, shorts, and automatic settlement at expiry.
+**Import and export** — Zerodha tradebooks and most broker CSVs, safe to re-import; full CSV export.
 **Platform filtering** — Tag trades by broker (Zerodha, Robinhood, etc.) and slice your dashboard by platform.
 **Secure by default** — Row Level Security at the database layer. Users can only access their own data.
 
@@ -36,7 +40,7 @@ Log trades from any broker in any currency. CapTrack converts each one at the ra
 | UI | React 19, Tailwind CSS 4, Radix primitives, IBM Plex |
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth (email/password + Google OAuth) |
-| Market data | Yahoo Finance prices, ECB rates via Frankfurter; cached in Supabase, refreshed nightly by a GitHub Action |
+| Market data | Yahoo Finance, mfapi.in (AMFI), NSE bhavcopy, ECB rates via Frankfurter; cached in Supabase, refreshed after each request and nightly by a GitHub Action |
 | Validation | Zod |
 | Testing | Vitest |
 
@@ -88,19 +92,19 @@ src/
   app/
     (app)/            Protected routes (dashboard, trades, settings)
     (auth)/           Public auth (login, signup, password reset)
-    api/symbols/      Yahoo Finance symbol search proxy
+    api/              Symbol and contract search, quotes, FX, CSV export
     auth/             OAuth callback + logout
   components/
-    trades/           Trade form, list, filters, delete
     layout/           App shell (header, user menu)
     ui/               Primitives (buttons, panels, tables, numbers)
     portfolio/        Overview and Holdings screens
-    trades/           Trade form, panel, log
+    trades/           Trade and cash forms, panels, activity log, import
+    entries/          Panels opened from the URL on any page
     settings/         Settings and first-run setup
   lib/
-    domain/           Pure business logic (position derivation)
+    domain/           Pure business logic (lots, money, tax, F&O, CSV)
     repo/             Database operations (trades CRUD)
-    services/         External APIs (Yahoo Finance, FX)
+    services/         External data (Yahoo, mfapi, NSE, ECB) and the market data store
     supabase/         Client setup + auth helpers
     validators/       Zod schemas
 ```
@@ -109,11 +113,12 @@ src/
 
 | Table | Purpose |
 |-------|---------|
-| `trades` | Every buy/sell transaction — symbol, type, side, qty, price, fees, currency, platform |
-| `user_settings` | Per-user preferences — base currency (any ISO code), platform list |
-| `fx_rates`, `price_history`, `price_splits` | Shared daily market data; readable by signed-in users, written only with the secret key |
+| `trades` | Every buy/sell — symbol, type, side, qty, price, fees, currency, platform, F&O contract fields |
+| `cash_entries` | Deposits, withdrawals, dividends, interest and charges |
+| `user_settings` | Base currency, platforms, cost method, tax year, long-term threshold, benchmark |
+| `fx_rates`, `price_history`, `price_splits`, `price_dividends` | Shared daily market data; readable by signed-in users, written only with the secret key |
 
-`trades` and `user_settings` are scoped to `user_id` with RLS. Migrations live in `supabase/migrations/`.
+`trades`, `cash_entries` and `user_settings` are scoped to `user_id` with RLS. Migrations live in `supabase/migrations/`; run them in the Supabase SQL editor. How every number is calculated: [METHODOLOGY.md](METHODOLOGY.md).
 
 ## License
 

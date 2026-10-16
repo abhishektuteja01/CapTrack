@@ -53,6 +53,7 @@ export function parseFoBhavcopy(csv: string): Map<string, FoRow> {
   const [header = [], ...rows] = parseCsv(csv);
   const col = (name: string) => header.indexOf(name);
   const c = {
+    date: col('TradDt'),
     type: col('FinInstrmTp'),
     name: col('FinInstrmNm'),
     und: col('TckrSymb'),
@@ -77,15 +78,22 @@ export function parseFoBhavcopy(csv: string): Map<string, FoRow> {
       return Number.isFinite(n) ? n : undefined;
     };
     const opt = r[c.opt];
+    const strike = kind === 'option' ? num(c.strike) : undefined;
+    let settle = num(c.settle) ?? num(c.close) ?? 0;
+    // On expiry day NSE puts the underlying's final settlement price in SttlmPric for options;
+    // what the option itself settles at is its intrinsic value against that.
+    if (kind === 'option' && strike !== undefined && r[c.expiry] && r[c.expiry] === r[c.date]) {
+      settle = opt === 'PE' ? Math.max(0, strike - settle) : Math.max(0, settle - strike);
+    }
     out.set(symbol, {
       symbol,
       underlying: r[c.und],
       kind,
       expiry: r[c.expiry],
-      strike: kind === 'option' ? num(c.strike) : undefined,
+      strike,
       optionType: opt === 'CE' || opt === 'PE' ? opt : undefined,
       close: num(c.close) ?? 0,
-      settle: num(c.settle) ?? num(c.close) ?? 0,
+      settle,
       underlyingPrice: num(c.undPrice),
       lotSize: num(c.lot),
     });

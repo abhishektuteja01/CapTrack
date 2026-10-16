@@ -7,7 +7,7 @@ import { deleteEntriesAction } from '@/app/(app)/trades/actions';
 import { money, price, qty } from '@/lib/format';
 import { Table, Td, Th } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { CASH_KIND_LABELS } from './cash-form';
+import { CASH_KIND_LABELS } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
 const subscribe = () => () => {};
