@@ -256,17 +256,19 @@ export async function deleteCashAction(formData: FormData): Promise<void> {
 
 const idList = z.array(z.string().uuid()).max(1000);
 
-/** Delete several rows from the activity log at once. `ids` are "trade:<uuid>" or "cash:<uuid>". */
-export async function deleteEntriesAction(formData: FormData): Promise<void> {
+/**
+ * Delete several rows from the activity log at once. `ids` are "trade:<uuid>" or "cash:<uuid>".
+ * No redirect: the table refreshes itself and clears its selection.
+ */
+export async function deleteEntriesAction(ids: string[]): Promise<{ ok: boolean }> {
   const user = await getUser();
   if (!user) redirect('/login');
-  const all = formData.getAll('ids').map(String);
-  const trades = idList.safeParse(all.filter((s) => s.startsWith('trade:')).map((s) => s.slice(6)));
-  const cash = idList.safeParse(all.filter((s) => s.startsWith('cash:')).map((s) => s.slice(5)));
-  if (trades.success) await deleteRows('trades', trades.data, user.id);
-  if (cash.success) await deleteRows('cash_entries', cash.data, user.id);
+  const trades = idList.safeParse(ids.filter((s) => s.startsWith('trade:')).map((s) => s.slice(6)));
+  const cash = idList.safeParse(ids.filter((s) => s.startsWith('cash:')).map((s) => s.slice(5)));
+  if (!trades.success || !cash.success) return { ok: false };
+  const [t, c] = await Promise.all([deleteRows('trades', trades.data, user.id), deleteRows('cash_entries', cash.data, user.id)]);
   revalidateAll();
-  redirect(safeReturn(formData.get('returnTo'), '/trades'));
+  return { ok: t.ok && c.ok };
 }
 
 export type ImportResult = {
