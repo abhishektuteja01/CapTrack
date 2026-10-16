@@ -1,0 +1,11 @@
+date,kind,symbol,type,name,quantity,price,fees,amount,currency,platform,fx_rate,fx_quote,underlying,expiry,strike,option_type,lot_size,notes,id
+2024-01-10T04:00:00Z,deposit,,,,,,,500000,INR,Zerodha,,,,,,,,,t-dep1
+2024-01-15T04:30:00Z,BUY,INFY.NS,stock,Infosys,50,1600,20,,INR,Zerodha,,,,,,,,,t1
+2024-06-10T04:30:00Z,BUY,INFY.NS,stock,Infosys,30,1450,15,,INR,Zerodha,,,,,,,,,t2
+2025-08-01T04:30:00Z,SELL,INFY.NS,stock,Infosys,60,1550,25,,INR,Zerodha,,,,,,,,,t3
+2025-02-03T04:30:00Z,BUY,ITC.NS,stock,ITC,200,450,10,,INR,Groww,,,,,,,,,t4
+2025-03-03T15:00:00Z,BUY,AAPL,stock,Apple,10,235,1,,USD,Vested,86.9,INR,,,,,,,t5
+2025-05-01T15:00:00Z,BUY,BTC,crypto,Bitcoin,0.05,95000,10,,USD,Coinbase,,,,,,,,,t6
+2025-04-01T04:30:00Z,BUY,122639,mutual_fund,,100,75,0,,INR,Zerodha,,,,,,,,,t7
+2025-06-01T04:30:00Z,interest,,,,,,,120,INR,Zerodha,,,,,,,,,t-int
+2025-12-01T04:30:00Z,fee,,,,,,,300,INR,Zerodha,,,,,,,,DP charges,t-fee

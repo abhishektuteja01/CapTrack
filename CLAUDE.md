@@ -10,12 +10,14 @@ npm run build    # Production build (catches type errors)
 npm run lint     # ESLint
 npm run test     # Vitest unit tests
 npx vitest run <path>  # Run a single test file
+npx supabase start     # Local database with every migration (Docker)
+npm run e2e      # Playwright browser tests against the local database
 ```
 
 ## Git
 
 - Never add AI attribution to commits, pushes or PRs: no `Co-Authored-By: Claude` trailers, no "Generated with Claude Code" lines.
-- `main` is protected: changes go through a PR, and the `checks` CI job (lint, typecheck, tests, build) must pass.
+- `main` is protected: changes go through a PR, and the `checks` CI job (lint, typecheck, tests, build) must pass. The `e2e` job runs the Playwright suite against a local Supabase.
 
 ## Environment Variables
 
@@ -53,7 +55,7 @@ Security is enforced at the DB layer via RLS — `auth.uid() = user_id` on all t
 - `user_settings` — base_currency, platforms[], cost_method (fifo|average), fy_start_month, long_term_months, benchmark. Created by a trigger at sign-up
 - `fx_rates`, `price_history`, `price_splits`, `price_dividends` — shared daily market data, read by users (one round trip via the `market_data` RPC), written by the service role. `price_history.symbol` is a Yahoo symbol, `MF:<AMFI code>` or `NFO:<NSE symbol>`
 
-Migrations live in `supabase/migrations/`; run them in the Supabase SQL editor before deploying code that needs them.
+Full schema, setup for a new copy, and how to add a migration: `supabase/README.md`. Migrations live in `supabase/migrations/` (001 → 005, each safe to run twice); run new ones in the Supabase SQL editor before deploying code that needs them. Newer Supabase projects grant nothing by default, so new tables need explicit `GRANT`s (see `005_grants.sql`).
 
 ## Deploy
 

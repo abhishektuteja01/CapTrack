@@ -27,6 +27,8 @@ export function ImportView({ platforms, baseCurrency }: { platforms: string[]; b
   const [dateOrder, setDateOrder] = useState<'dmy' | 'mdy'>('dmy');
   const [result, setResult] = useState<ImportResult | null>(null);
   const [pending, start] = useTransition();
+  // Remounts the file input after an import, so picking the same file again still loads it.
+  const [inputKey, setInputKey] = useState(0);
 
   const parsed = useMemo(() => {
     if (!file) return null;
@@ -50,7 +52,10 @@ export function ImportView({ platforms, baseCurrency }: { platforms: string[]; b
     start(async () => {
       const res = await importAction(JSON.stringify(good.map((r) => ({ line: r.line, draft: r.draft }))));
       setResult(res);
-      if (res.ok) setFile(null);
+      if (res.ok) {
+        setFile(null);
+        setInputKey((k) => k + 1);
+      }
     });
   }
 
@@ -68,6 +73,7 @@ export function ImportView({ platforms, baseCurrency }: { platforms: string[]; b
         <PanelHeader title="File" meta="CSV from your broker or a CapTrack export" />
         <div className="flex flex-col gap-3 p-4 text-[13px]">
           <input
+            key={inputKey}
             type="file"
             accept=".csv,text/csv"
             onChange={(e) => onFile(e.target.files?.[0])}

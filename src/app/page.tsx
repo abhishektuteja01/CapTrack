@@ -11,20 +11,22 @@ export const metadata: Metadata = {
 };
 
 const SPEC: [string, string][] = [
-  ['Prices', 'Yahoo Finance, at most a minute old when the page loads. Some exchanges are delayed by 15 minutes.'],
+  ['Prices', 'Yahoo Finance for stocks, ETFs and crypto, at most a minute old when the page loads. Indian mutual funds use AMFI’s daily NAV; NSE futures and options use NSE’s end-of-day settlement prices.'],
   ['Exchange rates', 'European Central Bank reference rates for about 30 currencies, Yahoo Finance for the rest. Each trade converts at the rate on its own date, or at your broker’s rate if you enter it.'],
   ['Currencies', 'Any ISO 4217 code for trades and for your base currency. London prices quoted in pence are converted to pounds.'],
-  ['Cost basis', 'Average cost per holding, with fees included.'],
-  ['Realized P&L', 'Booked on every sell, after fees, at the rate on the sell date.'],
-  ['Returns', 'XIRR over your actual cash flows, so money added later doesn’t distort the number.'],
+  ['Cost basis', 'First in, first out by default, or average cost. Fees included. Lots are kept per broker.'],
+  ['Realized P&L', 'Booked on every sell, after fees, at the rate on the sell date, with the holding period split into short and long term by tax year.'],
+  ['Money in and out', 'What you put in, what you took out and what’s still invested, so a profitable sale stays visible after you sell.'],
+  ['Income', 'Dividends, interest and charges you log count toward total return. Dividends you probably received but haven’t logged are pointed out.'],
+  ['Returns', 'Total return and XIRR over your actual cash flows, so money added later doesn’t distort the number, compared with an index of your choice.'],
   ['Splits', 'Applied automatically from Yahoo’s split data. Unreported splits of 5:1 or more are detected from the price.'],
-  ['Your data', 'Stored in Postgres with row-level security. Only your account can read your trades.'],
+  ['Your data', 'Stored in Postgres with row-level security. Only your account can read your trades. Import a broker CSV, export everything any time.'],
 ];
 
 const NOT_YET = [
-  'No broker sync or CSV import. You enter trades yourself.',
-  'Dividends and interest aren’t tracked yet.',
-  'Mutual funds work only where Yahoo Finance has a price for them.',
+  'No live broker sync. Import your broker’s CSV (Zerodha tradebook or most others) or enter trades yourself.',
+  'Demergers and mergers aren’t applied automatically. Splits and bonus issues are.',
+  'Futures and options are NSE only, priced at the end of each day.',
 ];
 
 export default async function Landing() {
@@ -120,7 +122,7 @@ export default async function Landing() {
       <footer className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-6 text-2xs text-ink-3 sm:px-6">
         <span>CapTrack</span>
         <span>
-          Prices: Yahoo Finance. Exchange rates: European Central Bank. Not investment advice.{' '}
+          Prices: Yahoo Finance, AMFI, NSE. Exchange rates: European Central Bank. Not investment advice.{' '}
           <a href="https://github.com/abhishektuteja01/CapTrack" className="text-accent hover:underline">
             Source on GitHub
           </a>
