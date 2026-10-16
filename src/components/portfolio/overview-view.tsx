@@ -4,13 +4,16 @@ import { chartPoints, type PortfolioSnapshot } from '@/lib/portfolio';
 import { Panel, PanelHeader } from '@/components/ui/panel';
 import { ButtonLink } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Notice } from '@/components/ui/notice';
 import { SummaryStrip } from '@/components/portfolio/summary-strip';
 import { PerformanceChart } from '@/components/portfolio/performance-chart';
 import { AllocationPanel } from '@/components/portfolio/allocation-panel';
 import { HoldingsTable } from '@/components/portfolio/holdings-table';
 import { StatusBar } from '@/components/portfolio/status-bar';
 import { PlatformFilter } from '@/components/portfolio/platform-filter';
+import { MoneyPanel } from '@/components/portfolio/money-panel';
+import { PortfolioNotices } from '@/components/portfolio/notices';
+import { benchmarkLabel } from '@/lib/benchmarks';
+import { sheetHref } from '@/lib/sheet-links';
 
 /** The Overview screen. Used by the dashboard and, with example data, by the landing page. */
 export function OverviewView({
@@ -29,12 +32,13 @@ export function OverviewView({
   demo?: boolean;
 }) {
   const { baseCurrency, holdings } = snapshot;
-  const missing = [...snapshot.missingQuotes, ...snapshot.missingFx];
+  const here = new URLSearchParams(platform ? { platform } : {});
+  const hereHref = platform ? `/dashboard?${here}` : '/dashboard';
 
   const actions = demo ? undefined : (
     <>
       {refresh}
-      <ButtonLink href="/trades/new?from=/dashboard" size="sm" variant="primary">
+      <ButtonLink href={sheetHref('/dashboard', here, { trade: 'new' })} scroll={false} size="sm" variant="primary">
         Add trade
       </ButtonLink>
     </>
@@ -47,21 +51,21 @@ export function OverviewView({
         {snapshot.tradeCount > 0 || platform ? <PlatformFilter platforms={snapshot.platforms} current={platform} /> : null}
       </div>
 
-      {snapshot.tradeCount === 0 && !platform ? (
+      {snapshot.tradeCount + snapshot.cashCount === 0 && !platform ? (
         <Panel>
           <PanelHeader title="Set up" meta="two questions, then your first trade" />
           {setup ?? (
             <EmptyState
               title="No trades yet"
               action={
-                <ButtonLink href="/trades?new=1" variant="primary">
+                <ButtonLink href={sheetHref('/dashboard', here, { trade: 'new' })} scroll={false} variant="primary">
                   Add your first trade
                 </ButtonLink>
               }
             />
           )}
         </Panel>
-      ) : snapshot.tradeCount === 0 ? (
+      ) : snapshot.tradeCount + snapshot.cashCount === 0 ? (
         <Panel>
           <EmptyState title={`No trades on ${platform} yet`} />
         </Panel>
@@ -69,18 +73,17 @@ export function OverviewView({
         <>
           <SummaryStrip snapshot={snapshot} actions={actions} />
 
-          {missing.length ? (
-            <Notice label="Partial totals">
-              {missing.join(', ')} {missing.length === 1 ? 'is' : 'are'} left out of value and returns because a
-              price or exchange rate is unavailable right now.
-            </Notice>
-          ) : null}
+          {demo ? null : <PortfolioNotices snapshot={snapshot} />}
 
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
             <Panel>
-              <PanelHeader title="Value vs invested" meta={baseCurrency} />
+              <PanelHeader title="Value vs net invested" meta={baseCurrency} />
               {snapshot.history.length > 1 ? (
-                <PerformanceChart points={chartPoints(snapshot.history)} currency={baseCurrency} />
+                <PerformanceChart
+                  points={chartPoints(snapshot.history)}
+                  currency={baseCurrency}
+                  benchmarkLabel={benchmarkLabel(snapshot.settings.benchmark)}
+                />
               ) : (
                 <p className="px-3 py-10 text-[13px] text-ink-3">The chart starts after your first full day of holding.</p>
               )}
@@ -91,27 +94,33 @@ export function OverviewView({
             </Panel>
           </div>
 
-          <Panel>
-            <PanelHeader
-              title={`Holdings · ${holdings.length}`}
-              meta="by value"
-              actions={
-                demo ? undefined : (
-                  <Link href="/holdings" className="px-1 text-2xs text-accent hover:underline">
-                    All columns
-                  </Link>
-                )
-              }
-            />
-            {holdings.length ? (
-              <HoldingsTable holdings={holdings} baseCurrency={baseCurrency} />
-            ) : (
-              <EmptyState
-                title="No open positions"
-                body="Everything has been sold. Realized P&L stays in your totals; closed positions are listed on the Holdings page."
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+            <Panel>
+              <PanelHeader
+                title={`Holdings · ${holdings.length}`}
+                meta="by value"
+                actions={
+                  demo ? undefined : (
+                    <Link href="/holdings" className="px-1 text-2xs text-accent hover:underline">
+                      All columns
+                    </Link>
+                  )
+                }
               />
-            )}
-          </Panel>
+              {holdings.length ? (
+                <HoldingsTable holdings={holdings} baseCurrency={baseCurrency} interactive={!demo} here={hereHref} />
+              ) : (
+                <EmptyState
+                  title="No open positions"
+                  body="Everything has been sold. Realized P&L stays in your totals; closed positions are listed on the Holdings page."
+                />
+              )}
+            </Panel>
+            <Panel>
+              <PanelHeader title="Money in and out" meta="all time" />
+              <MoneyPanel snapshot={snapshot} />
+            </Panel>
+          </div>
 
           <StatusBar snapshot={snapshot} />
         </>

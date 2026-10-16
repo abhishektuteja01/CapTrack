@@ -45,10 +45,19 @@ const H = 220;
 const PAD = { top: 18, right: 8, bottom: 22, left: 0 };
 
 /**
- * Portfolio value against money invested (cost basis), straight lines, no fill.
+ * Portfolio value against net money invested (put in minus taken out), plus an optional benchmark
+ * bought with the same money. Straight lines, no fill. Value − net invested is the total gain.
  * Defaults to All so the long view comes first. Hover or arrow keys read any day.
  */
-export function PerformanceChart({ points, currency }: { points: ChartPoint[]; currency: string }) {
+export function PerformanceChart({
+  points,
+  currency,
+  benchmarkLabel,
+}: {
+  points: ChartPoint[];
+  currency: string;
+  benchmarkLabel?: string;
+}) {
   const [range, setRange] = useState<Range>('All');
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
@@ -71,13 +80,14 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
 
   const first = data[0];
   const last = data[data.length - 1];
-  // Since start: value − invested. Shorter ranges exclude money added: Δvalue − Δinvested.
+  // Since start: value − net invested. Shorter ranges exclude money added or taken out: Δvalue − Δinvested.
   const gain =
-    first && last ? (range === 'All' ? last.v - last.c : last.v - first.v - (last.c - first.c)) : undefined;
+    first && last ? (range === 'All' ? last.v - last.i : last.v - first.v - (last.i - first.i)) : undefined;
+  const hasBench = data.some((p) => p.b !== undefined);
 
   const geo = useMemo(() => {
     if (data.length < 2 || !width) return null;
-    const vals = data.flatMap((p) => [p.v, p.c]);
+    const vals = data.flatMap((p) => (p.b !== undefined ? [p.v, p.i, p.b] : [p.v, p.i]));
     let min = Math.min(...vals);
     let max = Math.max(...vals);
     const span = max - min || Math.abs(max) || 1;
@@ -96,8 +106,11 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
     const y = (v: number) => PAD.top + (H - PAD.top - PAD.bottom) * (1 - (v - min) / (max - min));
 
     const value = data.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
-    let invested = `M${x(0).toFixed(1)} ${y(data[0].c).toFixed(1)}`;
-    for (let i = 1; i < data.length; i++) invested += ` H${x(i).toFixed(1)} V${y(data[i].c).toFixed(1)}`;
+    let invested = `M${x(0).toFixed(1)} ${y(data[0].i).toFixed(1)}`;
+    for (let i = 1; i < data.length; i++) invested += ` H${x(i).toFixed(1)} V${y(data[i].i).toFixed(1)}`;
+    const bench = data
+      .map((p, i) => (p.b === undefined ? null : `${x(i).toFixed(1)} ${y(p.b).toFixed(1)}`))
+      .reduce((d, pt) => (pt === null ? d : `${d}${d ? ' L' : 'M'}${pt}`), '');
 
     // x labels: years for long spans, months otherwise
     const spanDays = (Date.parse(last.d) - Date.parse(first.d)) / 86400000;
@@ -113,7 +126,7 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
       }
     });
 
-    return { ticks, x, y, value, invested, labels, plotW, times, t0, tSpan };
+    return { ticks, x, y, value, invested, bench, labels, plotW, times, t0, tSpan };
   }, [data, width, first, last]);
 
   function indexAt(clientX: number) {
@@ -147,8 +160,16 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
             <svg width="14" height="6" aria-hidden="true">
               <line x1="0" x2="14" y1="3" y2="3" stroke="var(--color-ink-3)" strokeWidth="1.25" strokeDasharray="3 2" />
             </svg>
-            Invested
+            Net invested
           </span>
+          {hasBench ? (
+            <span className="flex items-center gap-1.5">
+              <svg width="14" height="6" aria-hidden="true">
+                <line x1="0" x2="14" y1="3" y2="3" stroke="var(--color-series-2)" strokeWidth="1.5" />
+              </svg>
+              {benchmarkLabel ?? 'Benchmark'}
+            </span>
+          ) : null}
           {gain !== undefined ? (
             <span className="num">
               Gain {range === 'All' ? 'since start' : range}{' '}
@@ -185,7 +206,7 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
         role="img"
         aria-label={
           last
-            ? `Portfolio value ${money(last.v, currency, 0)} against ${money(last.c, currency, 0)} invested on ${fmtDate(last.d)}. Use arrow keys to read other days.`
+            ? `Portfolio value ${money(last.v, currency, 0)} against ${money(last.i, currency, 0)} net invested on ${fmtDate(last.d)}. Use arrow keys to read other days.`
             : 'No history yet'
         }
         onPointerMove={(e) => setHover(indexAt(e.clientX))}
@@ -215,11 +236,14 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
               </text>
             ))}
             <path d={geo.invested} fill="none" stroke="var(--color-ink-3)" strokeWidth="1.25" strokeDasharray="4 3" />
+            {geo.bench ? (
+              <path d={geo.bench} fill="none" stroke="var(--color-series-2)" strokeWidth="1.5" strokeLinejoin="round" />
+            ) : null}
             <path d={geo.value} fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinejoin="round" />
             {hover !== null ? (
               <g>
                 <line x1={geo.x(hover)} x2={geo.x(hover)} y1={PAD.top} y2={H - PAD.bottom} stroke="var(--color-ink-3)" strokeWidth="1" />
-                <circle cx={geo.x(hover)} cy={geo.y(data[hover].c)} r="3.5" fill="var(--color-surface)" stroke="var(--color-ink-3)" strokeWidth="1.5" />
+                <circle cx={geo.x(hover)} cy={geo.y(data[hover].i)} r="3.5" fill="var(--color-surface)" stroke="var(--color-ink-3)" strokeWidth="1.5" />
                 <circle cx={geo.x(hover)} cy={geo.y(data[hover].v)} r="4" fill="var(--color-accent)" stroke="var(--color-surface)" strokeWidth="2" />
               </g>
             ) : (
@@ -243,13 +267,19 @@ export function PerformanceChart({ points, currency }: { points: ChartPoint[]; c
               <span className="text-ink-3">Value</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="num text-ink">{money(h.c, currency, 0)}</span>
-              <span className="text-ink-3">Invested</span>
+              <span className="num text-ink">{money(h.i, currency, 0)}</span>
+              <span className="text-ink-3">Net invested</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className={cn('num', toneClass(h.v - h.c))}>{moneyDelta(h.v - h.c, currency, 0)}</span>
-              <span className="text-ink-3">Unrealized</span>
+              <span className={cn('num', toneClass(h.v - h.i))}>{moneyDelta(h.v - h.i, currency, 0)}</span>
+              <span className="text-ink-3">Gain</span>
             </div>
+            {h.b !== undefined ? (
+              <div className="flex justify-between gap-4">
+                <span className="num text-ink">{money(h.b, currency, 0)}</span>
+                <span className="text-ink-3">{benchmarkLabel ?? 'Benchmark'}</span>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

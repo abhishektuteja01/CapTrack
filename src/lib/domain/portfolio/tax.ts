@@ -3,7 +3,7 @@
 // just the grouping every tax form starts from.
 
 import type { Realization } from './positions';
-import { cashSign, type CashEntryLike } from './money';
+import type { CashEntryLike } from './money';
 
 export type Term = 'short' | 'long';
 
@@ -116,6 +116,7 @@ export type YearSummary = {
   derivatives: number;
   dividends: number;
   interest: number;
+  /** Negative: standalone charges reduce the year's result. */
   charges: number;
   partial: boolean;
 };
@@ -155,7 +156,7 @@ export function yearSummaries(args: {
     }
     if (c.kind === 'dividend') s.dividends += c.amountBase;
     else if (c.kind === 'interest') s.interest += c.amountBase;
-    else s.charges += Math.abs(c.amountBase) * -cashSign(c.kind);
+    else s.charges -= Math.abs(c.amountBase);
   }
   return Array.from(years.values()).sort((a, b) => b.year - a.year);
 }

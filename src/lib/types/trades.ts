@@ -4,7 +4,7 @@
  * High-level asset categories CapTrack supports.
  * Keep this broad; provider-specific details belong elsewhere.
  */
-export type AssetType = 'stock' | 'etf' | 'mutual_fund' | 'crypto' | 'cash';
+export type AssetType = 'stock' | 'etf' | 'mutual_fund' | 'crypto' | 'future' | 'option' | 'other';
 
 /**
  * BUY increases your position. SELL decreases it.

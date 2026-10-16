@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils';
 export const NAV = [
   { href: '/dashboard', label: 'Overview' },
   { href: '/holdings', label: 'Holdings' },
-  { href: '/trades', label: 'Trades' },
+  { href: '/trades', label: 'Activity' },
+  { href: '/pnl', label: 'P&L' },
   { href: '/settings', label: 'Settings' },
 ] as const;
 
