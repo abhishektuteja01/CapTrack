@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import UserMenu from '@/components/layout/user-menu';
-import { SideNav, TopNav } from '@/components/layout/nav-links';
+import { BottomNav, SideNav } from '@/components/layout/nav-links';
 
-/** Sidebar on desktop, top bar with a nav row on mobile. */
+/** Sidebar on desktop; on phones a slim top bar and a tab bar along the bottom. */
 export function AppFrame({ name, email, children }: { name: string; email?: string | null; children: ReactNode }) {
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[184px_minmax(0,1fr)]">
@@ -26,10 +26,11 @@ export function AppFrame({ name, email, children }: { name: string; email?: stri
           </Link>
           <UserMenu name={name.split(' ')[0]} compact />
         </div>
-        <TopNav />
       </header>
 
-      <main className="min-w-0 px-3 py-4 md:px-5 md:py-5">{children}</main>
+      {/* Bottom padding clears the phone tab bar. */}
+      <main className="min-w-0 px-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-4 md:px-5 md:py-5">{children}</main>
+      <BottomNav />
     </div>
   );
 }

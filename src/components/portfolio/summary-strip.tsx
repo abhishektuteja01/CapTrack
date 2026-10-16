@@ -68,10 +68,11 @@ export function SummaryStrip({ snapshot, actions }: { snapshot: PortfolioSnapsho
       <Cell label="XIRR" sub={bench && t.benchmarkXirr !== undefined ? `${bench} ${pct(t.benchmarkXirr, 1, false)}` : 'a year'}>
         {pct(t.xirr, 2, false)}
       </Cell>
-      <Cell label="Today" className={cn('text-ink-2', !actions && 'col-span-2')} sub={moneyDelta(t.dayChange, ccy, 0)}>
+      <Cell label="Today" className="text-ink-2" sub={moneyDelta(t.dayChange, ccy, 0)}>
         <span className={cn('text-[13px]', toneClass(t.dayChange))}>{pct(t.dayChangePct)}</span>
       </Cell>
-      {actions ? <div className="flex items-center justify-end gap-1 bg-surface px-3 py-2 sm:ml-auto">{actions}</div> : null}
+      {/* Phones add from the tab bar and refresh from the page title. */}
+      {actions ? <div className="hidden items-center justify-end gap-1 bg-surface px-3 py-2 md:ml-auto md:flex">{actions}</div> : null}
     </div>
   );
 }

@@ -66,10 +66,10 @@ export default async function ActivityPage({ searchParams }: { searchParams?: Pr
           <ButtonLink href="/api/export" size="sm" variant="ghost" prefetch={false}>
             Export
           </ButtonLink>
-          <ButtonLink href={sheetHref('/trades', here, { cash: 'new' })} scroll={false} size="sm">
+          <ButtonLink href={sheetHref('/trades', here, { cash: 'new' })} scroll={false} size="sm" className="hidden md:inline-flex">
             Add cash
           </ButtonLink>
-          <ButtonLink href={sheetHref('/trades', here, { trade: 'new' })} scroll={false} size="sm" variant="primary">
+          <ButtonLink href={sheetHref('/trades', here, { trade: 'new' })} scroll={false} size="sm" variant="primary" className="hidden md:inline-flex">
             Add trade
           </ButtonLink>
         </div>

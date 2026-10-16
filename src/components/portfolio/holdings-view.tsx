@@ -125,7 +125,7 @@ export function HoldingsView({
         <h1 className="text-base font-semibold">Holdings</h1>
         <div className="flex flex-wrap items-center gap-2">
           <PlatformFilter platforms={snapshot.platforms} current={platform} basePath="/holdings" />
-          <ButtonLink href={sheetHref('/holdings', params, { trade: 'new' })} scroll={false} size="sm" variant="primary">
+          <ButtonLink href={sheetHref('/holdings', params, { trade: 'new' })} scroll={false} size="sm" variant="primary" className="hidden md:inline-flex">
             Add trade
           </ButtonLink>
         </div>

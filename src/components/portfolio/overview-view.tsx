@@ -47,7 +47,10 @@ export function OverviewView({
   return (
     <div className="flex flex-col gap-3">
       <div className={demo ? 'hidden' : 'flex flex-wrap items-center justify-between gap-2'}>
-        <h1 className="text-base font-semibold">Overview</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-semibold">Overview</h1>
+          {snapshot.tradeCount + snapshot.cashCount > 0 ? <div className="md:hidden">{refresh}</div> : null}
+        </div>
         {snapshot.tradeCount > 0 || platform ? <PlatformFilter platforms={snapshot.platforms} current={platform} /> : null}
       </div>
 
