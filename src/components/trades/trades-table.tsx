@@ -19,7 +19,12 @@ function dayKey(iso: string, local: boolean) {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
-const dayFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const dayParts = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+/** "Tue, 13 Oct 2026", joined by hand so server and browser ICU versions render the same text. */
+const dayLabel = (date: Date) => {
+  const p = Object.fromEntries(dayParts.formatToParts(date).map((x) => [x.type, x.value]));
+  return `${p.weekday}, ${p.day} ${p.month} ${p.year}`;
+};
 
 const label = (r: ActivityRow) => (r.entry === 'trade' ? (r.kind === 'BUY' ? 'Buy' : 'Sell') : CASH_KIND_LABELS[r.kind as keyof typeof CASH_KIND_LABELS]);
 const outflow = (r: ActivityRow) => r.kind === 'BUY' || r.kind === 'withdrawal' || r.kind === 'fee';
@@ -128,7 +133,7 @@ function DayRows({
     <>
       <tr>
         <td colSpan={9} className="num border-b border-line bg-subtle/60 px-3 py-1 text-2xs font-medium text-ink-2">
-          {dayFmt.format(new Date(`${day}T00:00:00Z`))}
+          {dayLabel(new Date(`${day}T00:00:00Z`))}
         </td>
       </tr>
       {rows.map((t) => {
