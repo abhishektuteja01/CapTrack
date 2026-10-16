@@ -59,7 +59,9 @@ cp .env.example .env.local
 #   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 #   SUPABASE_SECRET_KEY=...        # server only
 
-# 3. Run
+# 3. Create the database: see supabase/README.md (hosted project or `npx supabase start`)
+
+# 4. Run
 npm run dev
 ```
 
@@ -74,6 +76,7 @@ Open [localhost:3000](http://localhost:3000).
 | `npm start` | Serve production build |
 | `npm run lint` | Run ESLint |
 | `npm run test` | Run Vitest |
+| `npm run e2e` | Browser tests against a local Supabase (`npx supabase start` first) |
 
 ## Architecture
 
@@ -118,7 +121,7 @@ src/
 | `user_settings` | Base currency, platforms, cost method, tax year, long-term threshold, benchmark |
 | `fx_rates`, `price_history`, `price_splits`, `price_dividends` | Shared daily market data; readable by signed-in users, written only with the secret key |
 
-`trades`, `cash_entries` and `user_settings` are scoped to `user_id` with RLS. Migrations live in `supabase/migrations/`; run them in the Supabase SQL editor. How every number is calculated: [METHODOLOGY.md](METHODOLOGY.md).
+`trades`, `cash_entries` and `user_settings` are scoped to `user_id` with RLS. Schema, setup and migrations: [supabase/README.md](supabase/README.md). How every number is calculated: [METHODOLOGY.md](METHODOLOGY.md).
 
 ## License
 
