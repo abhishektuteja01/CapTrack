@@ -16,8 +16,9 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: 'h-7 px-2.5 text-[13px]',
-  md: 'h-8 px-3 text-sm',
+  // Taller on phones, where they're tapped.
+  sm: 'h-7 px-2.5 text-[13px] max-md:h-9 max-md:px-3',
+  md: 'h-8 px-3 text-sm max-md:h-10',
 };
 
 export function buttonClass(variant: Variant = 'secondary', size: Size = 'md', className?: string) {

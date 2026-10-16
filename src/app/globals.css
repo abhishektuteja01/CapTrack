@@ -83,6 +83,26 @@
   font-stretch: 87.5%;
 }
 
+/*
+ * Phones: 16px text in fields (iOS zooms into anything smaller) and finger-sized fields.
+ * Unlayered, so it wins over the compact desktop utilities.
+ */
+@media (max-width: 767.98px) {
+  input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden']),
+  select {
+    min-height: 2.5rem;
+  }
+  input[type='checkbox'] {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition-duration: 0ms !important;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { Slice } from '@/lib/portfolio';
 import { money } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, touch } from '@/lib/utils';
 
 const TABS = [
   { key: 'platform', label: 'Platform' },
@@ -43,7 +43,7 @@ export function AllocationPanel({
             aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'rounded-sm px-1.5 py-0.5 text-2xs text-ink-3 hover:text-ink',
+              'rounded-sm px-1.5 py-0.5 text-2xs text-ink-3 hover:text-ink', touch,
               tab === t.key && 'bg-accent-soft font-medium text-accent'
             )}
           >

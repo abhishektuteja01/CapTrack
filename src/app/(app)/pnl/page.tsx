@@ -14,8 +14,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { toneClass } from '@/components/ui/num';
 import { Table, Td, Th, Tr } from '@/components/ui/table';
 import { EntrySheets } from '@/components/entries/entry-sheets';
+import { ShowMore } from '@/components/ui/show-more';
 import { CASH_KIND_LABELS } from '@/lib/labels';
-import { cn } from '@/lib/utils';
+import { cn, touch } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'P&L' };
@@ -27,7 +28,8 @@ const day = (iso: string) =>
 
 function Stat({ label, value, base, strong }: { label: string; value: number; base: string; strong?: boolean }) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5 bg-surface px-4 py-2.5">
+    // Net spans the phone grid's two columns, so the other six pair up evenly.
+    <div className={cn('flex min-w-0 flex-col gap-0.5 bg-surface px-4 py-2.5', strong && 'max-sm:col-span-2')}>
       <span className="condensed text-2xs font-medium uppercase tracking-[0.05em] text-ink-3">{label}</span>
       <span className={cn('num truncate', strong ? 'text-[20px] font-medium' : 'text-[15px]', toneClass(value))}>{moneyDelta(value, base, 0)}</span>
     </div>
@@ -75,7 +77,7 @@ export default async function PnlPage({ searchParams }: { searchParams?: Promise
               key={y}
               href={`/pnl?year=${y}`}
               aria-current={year === y ? 'true' : undefined}
-              className={cn('whitespace-nowrap rounded-sm px-2 py-0.5 text-2xs text-ink-2 hover:text-ink', year === y && 'bg-accent-soft font-medium text-accent')}
+              className={cn('whitespace-nowrap rounded-sm px-2 py-0.5 text-2xs text-ink-2 hover:text-ink', touch, year === y && 'bg-accent-soft font-medium text-accent')}
             >
               {taxYearLabel(y, fy)}
             </Link>
@@ -83,7 +85,7 @@ export default async function PnlPage({ searchParams }: { searchParams?: Promise
           <Link
             href="/pnl?year=all"
             aria-current={year === undefined ? 'true' : undefined}
-            className={cn('whitespace-nowrap rounded-sm px-2 py-0.5 text-2xs text-ink-2 hover:text-ink', year === undefined && 'bg-accent-soft font-medium text-accent')}
+            className={cn('whitespace-nowrap rounded-sm px-2 py-0.5 text-2xs text-ink-2 hover:text-ink', touch, year === undefined && 'bg-accent-soft font-medium text-accent')}
           >
             All years
           </Link>
@@ -209,40 +211,42 @@ export default async function PnlPage({ searchParams }: { searchParams?: Promise
         <div id="dividends" className="scroll-mt-4" />
         <PanelHeader title={`Dividends not logged · ${suggestions.length}`} meta="from reported dividends and what you held the day before" />
         {suggestions.length ? (
-          <Table>
-            <thead>
-              <tr>
-                <Th>Ex-date</Th>
-                <Th>Symbol</Th>
-                <Th wide>Platform</Th>
-                <Th numeric wide>Held</Th>
-                <Th numeric wide>Per share</Th>
-                <Th numeric>Expected</Th>
-                <Th className="w-14" aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {suggestions.map((d) => (
-                <Tr key={`${d.assetKey}|${d.platform}|${d.exDate}`}>
-                  <Td className="num text-ink-2">{day(`${d.exDate}T00:00:00Z`)}</Td>
-                  <Td className="font-semibold">{d.symbol}</Td>
-                  <Td wide className="text-ink-2">{d.platform}</Td>
-                  <Td numeric wide>{qty(d.quantity)}</Td>
-                  <Td numeric wide className="text-ink-2">{money(d.perShare, d.currency)}</Td>
-                  <Td numeric>{money(d.amount, d.currency)}</Td>
-                  <Td className="text-right">
-                    <Link
-                      href={sheetHref('/pnl', here, { cash: 'new', kind: 'dividend', symbol: d.symbol, type: d.type, platform: d.platform, amount: d.amount.toFixed(2), currency: d.currency, date: d.exDate })}
-                      scroll={false}
-                      className="rounded-sm border border-line-strong px-1.5 py-0.5 text-2xs text-ink-2 hover:bg-subtle hover:text-ink"
-                    >
-                      Add
-                    </Link>
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
+          <ShowMore count={suggestions.length}>
+            <Table>
+              <thead>
+                <tr>
+                  <Th>Ex-date</Th>
+                  <Th>Symbol</Th>
+                  <Th wide>Platform</Th>
+                  <Th numeric wide>Held</Th>
+                  <Th numeric wide>Per share</Th>
+                  <Th numeric>Expected</Th>
+                  <Th className="w-14" aria-label="Actions" />
+                </tr>
+              </thead>
+              <tbody>
+                {suggestions.map((d) => (
+                  <Tr key={`${d.assetKey}|${d.platform}|${d.exDate}`}>
+                    <Td className="num text-ink-2">{day(`${d.exDate}T00:00:00Z`)}</Td>
+                    <Td className="font-semibold">{d.symbol}</Td>
+                    <Td wide className="text-ink-2">{d.platform}</Td>
+                    <Td numeric wide>{qty(d.quantity)}</Td>
+                    <Td numeric wide className="text-ink-2">{money(d.perShare, d.currency)}</Td>
+                    <Td numeric>{money(d.amount, d.currency)}</Td>
+                    <Td className="text-right">
+                      <Link
+                        href={sheetHref('/pnl', here, { cash: 'new', kind: 'dividend', symbol: d.symbol, type: d.type, platform: d.platform, amount: d.amount.toFixed(2), currency: d.currency, date: d.exDate })}
+                        scroll={false}
+                        className={cn('rounded-sm border border-line-strong px-1.5 py-0.5 text-2xs text-ink-2 hover:bg-subtle hover:text-ink', touch)}
+                      >
+                        Add
+                      </Link>
+                    </Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </Table>
+          </ShowMore>
         ) : (
           <p className="px-3 py-4 text-[13px] text-ink-3">Every reported dividend for what you held is logged.</p>
         )}

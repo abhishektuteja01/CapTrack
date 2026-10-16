@@ -20,7 +20,7 @@ export function AppFrame({ name, email, children }: { name: string; email?: stri
 
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface md:hidden">
-        <div className="flex h-11 items-center justify-between px-4">
+        <div className="flex h-11 items-center justify-between pl-4 pr-1">
           <Link href="/dashboard" className="text-sm font-semibold text-ink">
             CapTrack
           </Link>

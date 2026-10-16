@@ -14,6 +14,7 @@ import { MoneyPanel } from '@/components/portfolio/money-panel';
 import { PortfolioNotices } from '@/components/portfolio/notices';
 import { benchmarkLabel } from '@/lib/benchmarks';
 import { sheetHref } from '@/lib/sheet-links';
+import { cn, touch } from '@/lib/utils';
 
 /** The Overview screen. Used by the dashboard and, with example data, by the landing page. */
 export function OverviewView({
@@ -78,8 +79,9 @@ export function OverviewView({
 
           {demo ? null : <PortfolioNotices snapshot={snapshot} />}
 
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-            <Panel>
+          {/* Phones: the two grids dissolve so the panels can reorder: chart, holdings, allocation, money. */}
+          <div className="grid gap-3 max-md:contents lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+            <Panel className="max-md:order-1">
               <PanelHeader title="Value vs net invested" meta={baseCurrency} />
               {snapshot.history.length > 1 ? (
                 <PerformanceChart
@@ -91,21 +93,22 @@ export function OverviewView({
                 <p className="px-3 py-10 text-[13px] text-ink-3">The chart starts after your first full day of holding.</p>
               )}
             </Panel>
-            <Panel>
+            <Panel className="max-md:order-3">
               <PanelHeader title="Allocation" />
               <AllocationPanel allocation={snapshot.allocation} currency={baseCurrency} />
             </Panel>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-            <Panel>
+          <div className="grid gap-3 max-md:contents lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+            <Panel className="max-md:order-2">
               <PanelHeader
                 title={`Holdings · ${holdings.length}`}
                 meta="by value"
                 actions={
                   demo ? undefined : (
-                    <Link href="/holdings" className="px-1 text-2xs text-accent hover:underline">
-                      All columns
+                    <Link href="/holdings" className={cn('px-1 text-2xs text-accent hover:underline', touch)}>
+                      <span className="max-sm:hidden">All columns</span>
+                      <span className="sm:hidden">See all</span>
                     </Link>
                   )
                 }
@@ -119,13 +122,15 @@ export function OverviewView({
                 />
               )}
             </Panel>
-            <Panel>
+            <Panel className="max-md:order-4">
               <PanelHeader title="Money in and out" meta="all time" />
               <MoneyPanel snapshot={snapshot} />
             </Panel>
           </div>
 
-          <StatusBar snapshot={snapshot} />
+          <div className="max-md:order-5">
+            <StatusBar snapshot={snapshot} />
+          </div>
         </>
       )}
     </div>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartPoint } from '@/lib/portfolio';
 import { compactMoney, money, moneyDelta } from '@/lib/format';
 import { toneClass } from '@/components/ui/num';
-import { cn } from '@/lib/utils';
+import { cn, touch } from '@/lib/utils';
 
 const RANGES = ['1M', '6M', 'YTD', '1Y', 'All'] as const;
 type Range = (typeof RANGES)[number];
@@ -149,7 +149,7 @@ export function PerformanceChart({
   return (
     <div className="flex flex-col gap-2 px-3 pb-2 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-4 text-2xs text-ink-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 whitespace-nowrap text-2xs text-ink-3">
           <span className="flex items-center gap-1.5">
             <svg width="14" height="6" aria-hidden="true">
               <line x1="0" x2="14" y1="3" y2="3" stroke="var(--color-accent)" strokeWidth="2" />
@@ -188,7 +188,7 @@ export function PerformanceChart({
                 setHover(null);
               }}
               className={cn(
-                'num rounded-sm px-1.5 py-0.5 text-2xs text-ink-3 hover:text-ink',
+                'num rounded-sm px-1.5 py-0.5 text-2xs text-ink-3 hover:text-ink', touch,
                 range === r && 'bg-accent-soft text-accent'
               )}
             >
@@ -201,7 +201,8 @@ export function PerformanceChart({
       <div
         ref={boxRef}
         className="relative outline-none"
-        style={{ height: H }}
+        // pan-y: a sideways drag reads the chart on phones, an up-down one still scrolls the page.
+        style={{ height: H, touchAction: 'pan-y' }}
         tabIndex={0}
         role="img"
         aria-label={

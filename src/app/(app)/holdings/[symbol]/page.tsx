@@ -17,7 +17,8 @@ import { toneClass } from '@/components/ui/num';
 import { Table, Td, Th, Tr } from '@/components/ui/table';
 import { PriceChart } from '@/components/portfolio/price-chart';
 import { EntrySheets } from '@/components/entries/entry-sheets';
-import { cn } from '@/lib/utils';
+import { ShowMore } from '@/components/ui/show-more';
+import { cn, touch } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -285,40 +286,42 @@ export default async function HoldingPage({ params, searchParams }: { params: Pa
       {dividends.length || suggestions.length ? (
         <Panel>
           <PanelHeader title="Dividends" />
-          <Table>
-            <tbody>
-              {suggestions.map((s) => (
-                <Tr key={`${s.platform}|${s.exDate}`} className="bg-warn-soft/40">
-                  <Td className="num text-ink-2">{day(`${s.exDate}T00:00:00Z`)}</Td>
-                  <Td className="text-2xs text-warn">
-                    Not logged<span className="hidden sm:inline"> · {qty(s.quantity)} × {money(s.perShare, s.currency)} on {s.platform}</span>
-                  </Td>
-                  <Td numeric>{money(s.amount, s.currency)}</Td>
-                  <Td className="text-right">
-                    <Link
-                      href={sheetHref(path, here, { cash: 'new', kind: 'dividend', symbol, type, platform: s.platform, amount: s.amount.toFixed(2), currency: s.currency, date: s.exDate })}
-                      scroll={false}
-                      className="rounded-sm border border-line-strong px-1.5 py-0.5 text-2xs text-ink-2 hover:bg-subtle hover:text-ink"
-                    >
-                      Add
-                    </Link>
-                  </Td>
-                </Tr>
-              ))}
-              {[...dividends].reverse().map((c) => (
-                <Tr key={c.id}>
-                  <Td className="num text-ink-2">
-                    <Link href={sheetHref(path, here, { cash: c.id })} scroll={false} className="hover:underline">
-                      {day(c.occurredAt)}
-                    </Link>
-                  </Td>
-                  <Td className="text-2xs text-ink-2">{c.platform}</Td>
-                  <Td numeric className="text-pos">+{money(c.amount, c.currency)}</Td>
-                  <Td />
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
+          <ShowMore count={dividends.length + suggestions.length}>
+            <Table>
+              <tbody>
+                {suggestions.map((s) => (
+                  <Tr key={`${s.platform}|${s.exDate}`} className="bg-warn-soft/40">
+                    <Td className="num text-ink-2">{day(`${s.exDate}T00:00:00Z`)}</Td>
+                    <Td className="text-2xs text-warn">
+                      Not logged<span className="hidden sm:inline"> · {qty(s.quantity)} × {money(s.perShare, s.currency)} on {s.platform}</span>
+                    </Td>
+                    <Td numeric>{money(s.amount, s.currency)}</Td>
+                    <Td className="text-right">
+                      <Link
+                        href={sheetHref(path, here, { cash: 'new', kind: 'dividend', symbol, type, platform: s.platform, amount: s.amount.toFixed(2), currency: s.currency, date: s.exDate })}
+                        scroll={false}
+                        className={cn('rounded-sm border border-line-strong px-1.5 py-0.5 text-2xs text-ink-2 hover:bg-subtle hover:text-ink', touch)}
+                      >
+                        Add
+                      </Link>
+                    </Td>
+                  </Tr>
+                ))}
+                {[...dividends].reverse().map((c) => (
+                  <Tr key={c.id}>
+                    <Td className="num text-ink-2">
+                      <Link href={sheetHref(path, here, { cash: c.id })} scroll={false} className="hover:underline">
+                        {day(c.occurredAt)}
+                      </Link>
+                    </Td>
+                    <Td className="text-2xs text-ink-2">{c.platform}</Td>
+                    <Td numeric className="text-pos">+{money(c.amount, c.currency)}</Td>
+                    <Td />
+                  </Tr>
+                ))}
+              </tbody>
+            </Table>
+          </ShowMore>
         </Panel>
       ) : null}
 
