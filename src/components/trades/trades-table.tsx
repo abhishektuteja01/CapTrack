@@ -38,14 +38,14 @@ const outflow = (r: ActivityRow) => r.kind === 'BUY' || r.kind === 'withdrawal' 
  * Each row opens its edit panel; checkboxes select rows for deleting together.
  */
 export function ActivityTable({
-  rows,
+  rows: serverRows,
   editHrefs,
   header,
 }: {
   rows: ActivityRow[];
   editHrefs: Record<string, string>;
   /** The panel header, so phones can put Select in it. */
-  header: { title: string; meta: string; actions: ReactNode };
+  header: { total: number; meta: string; actions: ReactNode };
 }) {
   const local = useSyncExternalStore(subscribe, () => true, () => false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -53,6 +53,11 @@ export function ActivityTable({
   const [failed, setFailed] = useState(false);
   // Phones show checkboxes only after "Select", so a tap normally opens the entry.
   const [selecting, setSelecting] = useState(false);
+  // Deleted rows disappear at once instead of waiting on the refresh, which CI showed can lag.
+  // A new list from the server already leaves them out, so the set resets with it.
+  const [removed, setRemoved] = useState<{ from: ActivityRow[]; keys: Set<string> }>({ from: serverRows, keys: new Set() });
+  const gone = removed.from === serverRows ? removed.keys : new Set<string>();
+  const rows = serverRows.filter((r) => !gone.has(`${r.entry}:${r.id}`));
   const [deleting, start] = useTransition();
   const router = useRouter();
 
@@ -61,6 +66,7 @@ export function ActivityTable({
       const res = await deleteEntriesAction(Array.from(selected));
       setFailed(!res.ok);
       if (res.ok) {
+        setRemoved({ from: serverRows, keys: new Set([...gone, ...selected]) });
         setSelected(new Set());
         setConfirm(false);
       }
@@ -86,7 +92,8 @@ export function ActivityTable({
   return (
     <div>
       <PanelHeader
-        {...header}
+        title={`Log · ${header.total - gone.size}`}
+        meta={header.meta}
         actions={
           <>
             {header.actions}

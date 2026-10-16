@@ -55,7 +55,7 @@ export default async function ActivityPage({ searchParams }: { searchParams?: Pr
   );
 
   const header = {
-    title: `Log · ${total}`,
+    total,
     meta: filtered ? 'filtered' : 'newest first',
     actions:
       pages > 1 ? (
@@ -104,7 +104,7 @@ export default async function ActivityPage({ searchParams }: { searchParams?: Pr
           <ActivityTable rows={rows} editHrefs={editHrefs} header={header} />
         ) : (
           <>
-            <PanelHeader {...header} />
+            <PanelHeader title={`Log · ${total}`} meta={header.meta} actions={header.actions} />
             {filtered ? (
               <EmptyState
                 title="Nothing matches these filters"
