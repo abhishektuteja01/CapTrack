@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { searchMf } from '@/lib/services/prices/mfapi';
 
 // Normalized symbol suggestion returned to the client
 export type SymbolSuggestion = {
@@ -42,6 +43,14 @@ export async function GET(req: Request) {
 
   if (!q || q.length < 1) {
     return NextResponse.json([]);
+  }
+
+  // Indian mutual funds: AMFI scheme codes from mfapi.in.
+  if (searchParams.get('type') === 'mutual_fund' && q.length >= 3) {
+    const funds = await searchMf(q);
+    if (funds.length) {
+      return NextResponse.json(funds.map((f): SymbolSuggestion => ({ symbol: f.code, name: f.name, type: 'fund', exchange: 'AMFI' })));
+    }
   }
 
   const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(

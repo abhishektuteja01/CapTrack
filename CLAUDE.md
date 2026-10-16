@@ -41,14 +41,20 @@ Security is enforced at the DB layer via RLS — `auth.uid() = user_id` on all t
 |------|-------|
 | `src/app/CLAUDE.md` | Routes, pages, server actions, auth guards |
 | `src/components/CLAUDE.md` | UI components, client components, forms |
-| `src/lib/CLAUDE.md` | Data layer, repo, validators, bootstrap, utilities |
-| `src/lib/domain/CLAUDE.md` | Pure business logic, position derivation, tests |
-| `src/lib/services/CLAUDE.md` | External APIs (Yahoo Finance), caching, FX |
+| `src/lib/CLAUDE.md` | Data layer, portfolio assembly, repo, validators, utilities |
+| `src/lib/domain/CLAUDE.md` | Pure business logic: lots, money, tax, F&O, CSV import, tests |
+| `src/lib/services/CLAUDE.md` | External data (Yahoo, mfapi, NSE, ECB), market data store, caching |
 
 ## Data Models
 
-- `trades` — id, user_id, asset metadata, quantity, price, fees, currency (any ISO code), fx_rate/fx_quote (optional broker rate), platform, source, notes
-- `user_settings` — user_id, base_currency (any ISO code), platforms[]
-- `fx_rates`, `price_history` — shared daily market data, read by users, written by the service role
+- `trades` — id, user_id, asset metadata (types: stock, etf, mutual_fund, crypto, future, option, other), side, quantity, price, fees, currency (any ISO code), fx_rate/fx_quote (optional broker rate), platform, source, notes, external_id (import dedupe), underlying/expiry/strike/option_type/lot_size (NSE F&O)
+- `cash_entries` — deposits, withdrawals, dividends, interest and charges per platform
+- `activity` — view: trades and cash entries in one list (security_invoker, so RLS applies)
+- `user_settings` — base_currency, platforms[], cost_method (fifo|average), fy_start_month, long_term_months, benchmark. Created by a trigger at sign-up
+- `fx_rates`, `price_history`, `price_splits`, `price_dividends` — shared daily market data, read by users (one round trip via the `market_data` RPC), written by the service role. `price_history.symbol` is a Yahoo symbol, `MF:<AMFI code>` or `NFO:<NSE symbol>`
 
-Migrations live in `supabase/migrations/`; run them in the Supabase SQL editor.
+Migrations live in `supabase/migrations/`; run them in the Supabase SQL editor before deploying code that needs them.
+
+## Deploy
+
+`vercel.json` pins functions to `pdx1`, next to the Supabase project (AWS us-west-2). Every page makes a few database round trips, so the region matters more than anything else for speed.

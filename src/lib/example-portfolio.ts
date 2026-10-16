@@ -2,11 +2,11 @@
 // A fixed, made-up portfolio for the landing page and screenshots.
 // Built with the same domain functions as real data, so the numbers add up.
 
-import { assetKey, derivePositions, type TradeLike } from '@/lib/domain/portfolio/positions';
-import { buildHistory, portfolioCashFlows, type PriceSeries } from '@/lib/domain/portfolio/history';
-import { xirr } from '@/lib/domain/portfolio/xirr';
-import { makeFxLookup, type UsdRateRow } from '@/lib/domain/fx/rates';
-import type { Holding, PortfolioSnapshot, Slice } from '@/lib/portfolio';
+import { assetKey } from '@/lib/domain/portfolio/positions';
+import type { PriceSeries } from '@/lib/domain/portfolio/history';
+import type { UsdRateRow } from '@/lib/domain/fx/rates';
+import type { Quote } from '@/lib/services/prices/quotes';
+import { assemble, type AppCash, type AppTrade, type PortfolioSnapshot } from '@/lib/portfolio';
 
 const AS_OF = '2026-10-15';
 const BASE = 'INR';
@@ -77,6 +77,8 @@ function weekdays(): string[] {
 
 let cached: PortfolioSnapshot | null = null;
 
+const typeOf = (symbol: string) => (symbol.endsWith('BEES.NS') ? 'etf' : 'stock');
+
 export function examplePortfolio(): PortfolioSnapshot {
   if (cached) return cached;
   const days = weekdays();
@@ -88,14 +90,14 @@ export function examplePortfolio(): PortfolioSnapshot {
       fxRows.push({ date: d, currency: ccy, usdPerUnit: path(start, FX_END[ccy], 0.015, ccy.length, Date.parse(d)) });
     }
   }
-  const fx = makeFxLookup(fxRows);
 
-  const trades: (TradeLike & { platform: string })[] = TRADES.map(([symbol, date, side, quantity, price], i) => {
+  const trades: AppTrade[] = TRADES.map(([symbol, date, side, quantity, price], i) => {
     const a = bySymbol.get(symbol)!;
     return {
       id: String(i),
       occurredAt: `${date}T09:30:00Z`,
-      asset: { symbol, type: symbol.endsWith('BEES.NS') ? 'etf' : 'stock' },
+      asset: { symbol, type: typeOf(symbol) },
+      name: a.name,
       side,
       quantity,
       price,
@@ -105,115 +107,55 @@ export function examplePortfolio(): PortfolioSnapshot {
     };
   });
 
+  const cash: AppCash[] = [
+    { id: 'c1', occurredAt: '2024-08-20T09:30:00Z', kind: 'dividend', amount: 800, currency: 'INR', platform: 'Zerodha', assetSymbol: 'RELIANCE.NS', assetType: 'stock' },
+    { id: 'c2', occurredAt: '2025-06-12T09:30:00Z', kind: 'dividend', amount: 6300, currency: 'INR', platform: 'Zerodha', assetSymbol: 'INFY.NS', assetType: 'stock' },
+  ];
+
   const prices = new Map<string, PriceSeries>();
+  const quotes = new Map<string, Quote>();
   ASSETS.forEach((a, i) => {
-    const type = a.symbol.endsWith('BEES.NS') ? 'etf' : 'stock';
-    prices.set(assetKey(a.symbol, type), {
+    const key = assetKey(a.symbol, typeOf(a.symbol));
+    prices.set(key, {
       currency: a.currency,
       points: days.map((d) => ({
         date: d,
         close: d === AS_OF ? a.end : path(a.start, a.end, a.wobble, i + 1, Date.parse(d)),
       })),
     });
-  });
-
-  const positions = derivePositions(trades, { baseCurrency: BASE, fx, includeClosed: true });
-  const holdings: Holding[] = [];
-  const closed: PortfolioSnapshot['closed'] = [];
-  let realized = 0;
-
-  for (const p of positions) {
-    const a = bySymbol.get(p.asset.symbol)!;
-    const key = assetKey(p.asset.symbol, p.asset.type);
-    realized += p.realizedBase ?? 0;
-    if (p.closed) {
-      closed.push({
-        key,
-        symbol: p.asset.symbol,
-        type: String(p.asset.type),
-        tradeCurrency: p.currency,
-        realized: p.realized,
-        realizedBase: p.realizedBase,
-        lastTradeAt: p.lastTradeAt,
-      });
-      continue;
-    }
-    const rate = fx(a.currency, BASE, AS_OF)!;
-    const valueBase = p.quantity * a.end * rate;
-    const unrealizedBase = valueBase - (p.costBasisBase ?? 0);
-    holdings.push({
-      key,
-      symbol: p.asset.symbol,
-      type: String(p.asset.type),
+    quotes.set(key, {
       name: a.name,
-      platforms: [a.platform],
-      tradeCurrency: p.currency,
-      quoteCurrency: a.currency,
-      quantity: p.quantity,
-      avgCost: p.avgCost,
       price: a.end,
+      currency: a.currency,
       previousClose: a.prev,
-      dayChangePct: ((a.end - a.prev) / a.prev) * 100,
-      dayChangeBase: p.quantity * (a.end - a.prev) * rate,
-      valueBase,
-      costBasisBase: p.costBasisBase,
-      unrealizedBase,
-      unrealizedPct: p.costBasisBase ? (unrealizedBase / p.costBasisBase) * 100 : undefined,
-      realizedBase: p.realizedBase,
+      dayChangePercent: ((a.end - a.prev) / a.prev) * 100,
+      timestamp: Date.parse(`${AS_OF}T10:00:00Z`),
       intraday: Array.from({ length: 48 }, (_, k) => a.prev + (a.end - a.prev) * (k / 47) + Math.sin(k / 3 + a.symbol.length) * a.end * 0.002),
-      firstTradeAt: p.firstTradeAt,
-      mixedCurrency: false,
-      splits: [],
+      source: 'yahoo',
     });
-  }
-
-  const sum = (f: (h: Holding) => number) => holdings.reduce((s, h) => s + f(h), 0);
-  const value = sum((h) => h.valueBase!);
-  const costBasis = sum((h) => h.costBasisBase!);
-  const dayChange = sum((h) => h.dayChangeBase!);
-  holdings.forEach((h) => (h.weight = (h.valueBase! / value) * 100));
-  holdings.sort((a, b) => b.valueBase! - a.valueBase!);
-
-  const group = (k: (h: Holding) => string): Slice[] => {
-    const m = new Map<string, number>();
-    holdings.forEach((h) => m.set(k(h), (m.get(k(h)) ?? 0) + h.valueBase!));
-    return Array.from(m, ([key, v]) => ({ key, value: v, weight: (v / value) * 100 })).sort((a, b) => b.value - a.value);
+  });
+  const benchmark: PriceSeries = {
+    currency: 'INR',
+    points: days.map((d) => ({ date: d, close: path(17900, 25100, 0.06, 9, Date.parse(d)) })),
   };
 
-  const history = buildHistory({ trades, prices, baseCurrency: BASE, fx, end: AS_OF });
-  const flows = portfolioCashFlows({ trades, baseCurrency: BASE, fx, currentValue: value, asOf: AS_OF });
-  const r = flows ? xirr(flows) : undefined;
-
-  cached = {
+  const { snapshot } = assemble({
     baseCurrency: BASE,
     platforms: ['Zerodha', 'Interactive Brokers', 'Groww', 'Vested'],
-    tradeCount: trades.length,
-    holdings,
-    closed,
-    totals: {
-      value,
-      costBasis,
-      unrealized: value - costBasis,
-      unrealizedPct: ((value - costBasis) / costBasis) * 100,
-      realized,
-      dayChange,
-      dayChangePct: (dayChange / (value - dayChange)) * 100,
-      xirr: r === undefined ? undefined : r * 100,
-    },
-    allocation: {
-      platform: group((h) => h.platforms[0]),
-      currency: group((h) => h.quoteCurrency!),
-      type: group((h) => h.type),
-    },
-    history,
-    pricesAsOf: Date.parse(`${AS_OF}T10:00:00Z`),
-    pricesStale: false,
-    fx: {
-      date: AS_OF,
-      rates: ['USD', 'EUR'].map((c) => ({ currency: c, toBase: fx(c, BASE, AS_OF)! })),
-    },
-    missingQuotes: [],
-    missingFx: [],
-  };
+    settings: { costMethod: 'fifo', fyStartMonth: 4, longTermMonths: 12, benchmark: '^NSEI' },
+    trades,
+    cash,
+    prices,
+    splits: new Map(),
+    dividends: new Map(),
+    fxRows,
+    benchmark,
+    underlyings: new Map(),
+    quotes,
+    sources: ['Yahoo Finance'],
+    today: AS_OF,
+  });
+  // Fixed clock: never "stale".
+  cached = { ...snapshot, pricesStale: false };
   return cached;
 }

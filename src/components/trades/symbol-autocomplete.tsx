@@ -2,12 +2,41 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { ContractSuggestion } from '@/app/api/contracts/route';
 
 export type SymbolSuggestion = {
   symbol: string;
   name: string;
-  type: 'stock' | 'etf' | 'crypto' | 'fund' | 'other';
+  type: 'stock' | 'etf' | 'crypto' | 'fund' | 'other' | 'future' | 'option';
   exchange?: string;
+  /** NSE contract details when the suggestion is a future or option. */
+  contract?: ContractSuggestion;
+};
+
+type Fetcher = (q: string, signal: AbortSignal) => Promise<SymbolSuggestion[]>;
+
+const searchSymbols =
+  (assetType?: string): Fetcher =>
+  async (q, signal) => {
+    const res = await fetch(`/api/symbols?q=${encodeURIComponent(q)}${assetType ? `&type=${assetType}` : ''}`, { signal });
+    return (await res.json()) as SymbolSuggestion[];
+  };
+
+/** NSE futures and options from the latest bhavcopy. */
+export const searchContracts: Fetcher = async (q, signal) => {
+  const res = await fetch(`/api/contracts?q=${encodeURIComponent(q)}`, { signal });
+  if (!res.ok) return [];
+  const list = (await res.json()) as ContractSuggestion[];
+  return list.map((c) => ({
+    symbol: c.symbol,
+    name:
+      c.kind === 'future'
+        ? `${c.underlying} future · ${c.expiry}`
+        : `${c.underlying} ${c.strike} ${c.optionType} · ${c.expiry}`,
+    type: c.kind,
+    exchange: c.lotSize ? `lot ${c.lotSize}` : 'NSE',
+    contract: c,
+  }));
 };
 
 /**
@@ -20,12 +49,19 @@ export default function SymbolAutocomplete({
   onChange,
   onSelect,
   invalid,
+  assetType,
+  fetcher,
+  placeholder = 'AAPL, RELIANCE.NS, BTC…',
 }: {
   id?: string;
   value: string;
   onChange: (text: string) => void;
   onSelect: (s: SymbolSuggestion) => void;
   invalid?: boolean;
+  /** Mutual funds also search Indian scheme codes. */
+  assetType?: string;
+  fetcher?: Fetcher;
+  placeholder?: string;
 }) {
   const [results, setResults] = useState<SymbolSuggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -43,8 +79,7 @@ export default function SymbolAutocomplete({
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/symbols?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
-        const json = (await res.json()) as SymbolSuggestion[];
+        const json = await (fetcher ?? searchSymbols(assetType))(q, ctrl.signal);
         setResults(json);
         setActive(-1);
         setOpen(true);
@@ -58,6 +93,7 @@ export default function SymbolAutocomplete({
       clearTimeout(t);
       ctrl.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   function pick(s: SymbolSuggestion) {
@@ -109,7 +145,7 @@ export default function SymbolAutocomplete({
         }}
         onFocus={() => results.length && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
-        placeholder="AAPL, RELIANCE.NS, BTC…"
+        placeholder={placeholder}
         className={cn(inputClass, 'num uppercase placeholder:normal-case')}
       />
       {showList ? (

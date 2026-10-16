@@ -67,6 +67,7 @@ type YahooChartResult = {
   meta?: YahooChartMeta;
   events?: {
     splits?: Record<string, { date: number; numerator: number; denominator: number }>;
+    dividends?: Record<string, { date: number; amount: number }>;
   };
   timestamp?: number[];
   indicators?: {
@@ -82,15 +83,19 @@ async function fetchChart(
   query: string,
   revalidate: number
 ): Promise<YahooChartResult> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?${query}`;
+  const path = `/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?${query}`;
+  const get = (host: string) =>
+    fetch(`https://${host}.finance.yahoo.com${path}`, {
+      headers: {
+        'User-Agent': 'CapTrack/1.0',
+        Accept: 'application/json,text/plain,*/*',
+      },
+      next: { revalidate },
+    });
 
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'CapTrack/1.0',
-      Accept: 'application/json,text/plain,*/*',
-    },
-    next: { revalidate },
-  });
+  // Yahoo rate-limits by host; the second host often still answers.
+  let res = await get('query1');
+  if (res.status === 429 || res.status >= 500) res = await get('query2');
 
   const raw = await res.text();
 
@@ -171,8 +176,18 @@ export async function fetchYahooPrice(
         : undefined,
     timestamp: timestamps[idx] * 1000,
     exchange: meta?.fullExchangeName ?? meta?.exchangeName,
-    intraday: closes.filter((c): c is number => c != null).map((c) => c * factor),
+    intraday: thin(closes.filter((c): c is number => c != null).map((c) => c * factor), 80),
   };
+}
+
+/** Keep about `n` evenly spaced points (always the last one): a sparkline doesn't need 390. */
+function thin(values: number[], n: number) {
+  if (values.length <= n) return values;
+  const step = values.length / n;
+  const out: number[] = [];
+  for (let i = 0; i < n - 1; i++) out.push(values[Math.floor(i * step)]);
+  out.push(values[values.length - 1]);
+  return out;
 }
 
 /**
@@ -210,13 +225,13 @@ export async function fetchDailyHistory(
   symbol: string,
   assetType: string | undefined,
   from: string
-): Promise<{ symbol: string; currency: string; points: PricePoint[]; splits: Split[] }> {
+): Promise<{ symbol: string; currency: string; points: PricePoint[]; splits: Split[]; dividends: PricePoint[] }> {
   const yahooSymbol = toYahooSymbol(symbol, assetType);
   const period1 = Math.floor(Date.parse(`${from}T00:00:00Z`) / 1000);
   const period2 = Math.floor(Date.now() / 1000);
   const result = await fetchChart(
     yahooSymbol,
-    `period1=${period1}&period2=${period2}&interval=1d&events=split`,
+    `period1=${period1}&period2=${period2}&interval=1d&events=div%2Csplit`,
     3600
   );
 
@@ -242,10 +257,17 @@ export async function fetchDailyHistory(
     }))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 
+  // Per-share amounts, same units as the closes. The date is the ex-dividend day.
+  const dividends: PricePoint[] = Object.values(result.events?.dividends ?? {})
+    .filter((e) => e.amount > 0)
+    .map((e) => ({ date: new Date((e.date + offset) * 1000).toISOString().slice(0, 10), close: e.amount * factor }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
   return {
     symbol: yahooSymbol,
     currency,
     splits,
+    dividends,
     points: Array.from(byDate, ([date, close]) => ({ date, close })).sort((a, b) =>
       a.date < b.date ? -1 : 1
     ),

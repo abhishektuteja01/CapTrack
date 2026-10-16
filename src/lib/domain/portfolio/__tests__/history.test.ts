@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { buildHistory, portfolioCashFlows } from '../history'
+import { buildHistory } from '../history'
+import { xirrFlows } from '../money'
+import { replay } from '../positions'
 import { xirr } from '../xirr'
 import { makeFxLookup } from '../../fx/rates'
 import type { TradeLike } from '../positions'
@@ -71,7 +73,8 @@ describe('xirr', () => {
     expect(xirr([{ date: '2023-01-01', amount: -1 }, { date: '2024-01-01', amount: -1 }])).toBeUndefined()
   })
   it('cash flows include current value', () => {
-    const flows = portfolioCashFlows({ trades, baseCurrency: 'INR', fx, currentValue: 100000, asOf: '2025-01-04' })
+    const { flows: tradeFlows } = replay(trades, { baseCurrency: 'INR', fx })
+    const flows = xirrFlows({ flows: tradeFlows, cash: [], baseCurrency: 'INR', fx, currentValue: 100000, asOf: '2025-01-04' })
     expect(flows).toEqual([
       { date: '2024-01-02', amount: -80000 },
       { date: '2024-01-04', amount: -7500 },

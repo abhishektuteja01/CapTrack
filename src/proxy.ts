@@ -34,8 +34,8 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // This will refresh the session if it's expired
-  await supabase.auth.getUser();
+  // Refreshes the session if it's expired. Verifies the JWT locally; no Auth round trip.
+  await supabase.auth.getClaims();
 
   return response;
 }

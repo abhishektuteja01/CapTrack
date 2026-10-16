@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { inputClass } from './symbol-autocomplete';
 import { cn } from '@/lib/utils';
 
-/** Symbol search, platform and side. All in the URL so filtered views can be shared and refreshed. */
+/** Symbol search, platform and kind. All in the URL so filtered views can be shared and refreshed. */
 export default function TradeFilters({ platforms }: { platforms: string[] }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -53,14 +53,19 @@ export default function TradeFilters({ platforms }: { platforms: string[] }) {
         ))}
       </select>
       <select
-        aria-label="Side"
-        value={params.get('side') ?? ''}
-        onChange={(e) => set({ side: e.target.value || undefined })}
+        aria-label="Kind"
+        value={params.get('kind') ?? ''}
+        onChange={(e) => set({ kind: e.target.value || undefined })}
         className={cn(inputClass, 'h-7 w-auto')}
       >
-        <option value="">Buys and sells</option>
+        <option value="">Everything</option>
         <option value="BUY">Buys</option>
         <option value="SELL">Sells</option>
+        <option value="dividend">Dividends</option>
+        <option value="interest">Interest</option>
+        <option value="deposit">Deposits</option>
+        <option value="withdrawal">Withdrawals</option>
+        <option value="fee">Charges</option>
       </select>
     </div>
   );

@@ -35,7 +35,7 @@ describe('realized P&L', () => {
     expect(closed.realized).toBeCloseTo(800 - 1 - 1000)
   })
 
-  it('oversell is clamped: realized only counts held units, fees still count', () => {
+  it('oversell is clamped: realized only counts held units and their share of fees', () => {
     const [pos] = derivePositions(
       [
         buy({ occurredAt: '2024-01-01', quantity: 5, price: 10 }),
@@ -44,7 +44,8 @@ describe('realized P&L', () => {
       { includeClosed: true }
     )
     expect(pos.quantity).toBe(0)
-    expect(pos.realized).toBeCloseTo(5 * 12 - 2 - 50)
+    expect(pos.realized).toBeCloseTo(5 * 12 - 2 * (5 / 8) - 50)
+    expect(pos.oversold).toBe(3)
   })
 })
 

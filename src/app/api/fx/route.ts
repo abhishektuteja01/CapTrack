@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
-import { loadUsdRates } from '@/lib/services/market/store';
+import { loadFx } from '@/lib/services/market/store';
 import { makeFxLookup } from '@/lib/domain/fx/rates';
 
 // Rate for 1 unit of `from` in `to` on `date` (YYYY-MM-DD). Used by the trade form to show the conversion.
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   const { data } = await supabase.auth.getUser();
   if (!data.user) return NextResponse.json({ error: 'Sign in first' }, { status: 401 });
 
-  const { rows } = await loadUsdRates(supabase, [from, to], date);
+  const rows = await loadFx(supabase, [from, to], date);
   const rate = makeFxLookup(rows)(from, to, date);
   if (rate === undefined) return NextResponse.json({ error: 'Rate unavailable' }, { status: 404 });
   const rateDate = rows
