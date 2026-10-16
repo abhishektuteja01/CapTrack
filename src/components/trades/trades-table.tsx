@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useSyncExternalStore, useTransition } from 'react';
 import type { ActivityRow } from '@/lib/trades';
 import { deleteEntriesAction } from '@/app/(app)/trades/actions';
 import { money, price, qty } from '@/lib/format';
@@ -33,10 +34,25 @@ const outflow = (r: ActivityRow) => r.kind === 'BUY' || r.kind === 'withdrawal' 
  * Trades and cash entries grouped under day headers in the viewer's time zone.
  * Each row opens its edit panel; checkboxes select rows for deleting together.
  */
-export function ActivityTable({ rows, editHrefs, returnTo }: { rows: ActivityRow[]; editHrefs: Record<string, string>; returnTo: string }) {
+export function ActivityTable({ rows, editHrefs }: { rows: ActivityRow[]; editHrefs: Record<string, string> }) {
   const local = useSyncExternalStore(subscribe, () => true, () => false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [deleting, start] = useTransition();
+  const router = useRouter();
+
+  function remove() {
+    start(async () => {
+      const res = await deleteEntriesAction(Array.from(selected));
+      setFailed(!res.ok);
+      if (res.ok) {
+        setSelected(new Set());
+        setConfirm(false);
+      }
+      router.refresh();
+    });
+  }
   const groups: { day: string; rows: ActivityRow[] }[] = [];
   for (const r of rows) {
     const day = dayKey(r.occurredAt, local);
@@ -54,11 +70,7 @@ export function ActivityTable({ rows, editHrefs, returnTo }: { rows: ActivityRow
   const allKeys = rows.map((r) => `${r.entry}:${r.id}`);
 
   return (
-    <form action={deleteEntriesAction}>
-      <input type="hidden" name="returnTo" value={returnTo} />
-      {Array.from(selected).map((k) => (
-        <input key={k} type="hidden" name="ids" value={k} />
-      ))}
+    <div>
       {selected.size ? (
         <div className="flex items-center justify-between gap-2 border-b border-line bg-hover px-3 py-1.5 text-2xs">
           <span className="text-ink-2">{selected.size} selected</span>
@@ -68,8 +80,8 @@ export function ActivityTable({ rows, editHrefs, returnTo }: { rows: ActivityRow
               <Button size="sm" variant="ghost" onClick={() => setConfirm(false)}>
                 Keep
               </Button>
-              <Button size="sm" variant="danger" type="submit">
-                Delete
+              <Button size="sm" variant="danger" onClick={remove} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete'}
               </Button>
             </span>
           ) : (
@@ -82,6 +94,7 @@ export function ActivityTable({ rows, editHrefs, returnTo }: { rows: ActivityRow
               </Button>
             </span>
           )}
+          {failed ? <span className="text-neg">Couldn&apos;t delete. Try again.</span> : null}
         </div>
       ) : null}
       <Table>
@@ -112,7 +125,7 @@ export function ActivityTable({ rows, editHrefs, returnTo }: { rows: ActivityRow
           ))}
         </tbody>
       </Table>
-    </form>
+    </div>
   );
 }
 

@@ -4,7 +4,8 @@
 
 import { expect, test, type Page } from '@playwright/test';
 
-test.describe.configure({ mode: 'serial' });
+// One account, built up step by step: a retry would start from a changed account, so there are none.
+test.describe.configure({ mode: 'serial', retries: 0 });
 
 /** Fails the test on any console error or uncaught exception (hydration mismatches included). */
 function watchErrors(page: Page) {

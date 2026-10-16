@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
 import { listActivity } from '@/lib/trades';
 import { readSettings } from '@/lib/portfolio';
-import { closeHref, sheetHref } from '@/lib/sheet-links';
+import { sheetHref } from '@/lib/sheet-links';
 import { Panel, PanelHeader } from '@/components/ui/panel';
 import { ButtonLink } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -100,7 +100,7 @@ export default async function ActivityPage({ searchParams }: { searchParams?: Pr
           }
         />
         {rows.length ? (
-          <ActivityTable rows={rows} editHrefs={editHrefs} returnTo={closeHref('/trades', here)} />
+          <ActivityTable rows={rows} editHrefs={editHrefs} />
         ) : filtered ? (
           <EmptyState
             title="Nothing matches these filters"
