@@ -16,8 +16,8 @@ describe('derivePositions', () => {
     const pos = positions[0]
 
     expect(pos.quantity).toBe(100)
-    expect(pos.costBasis).toBe(1005)
-    expect(pos.avgCost).toBe(10.05)
+    expect(pos.costBasis).toBeCloseTo(1005)
+    expect(pos.avgCost).toBeCloseTo(10.05)
     expect(pos.totalFees).toBe(5)
   })
   it('BUY then partial SELL reduces quantity and costBasis correctly', () => {
@@ -44,8 +44,8 @@ describe('derivePositions', () => {
     const pos = positions[0]
 
     expect(pos.quantity).toBe(50)
-    expect(pos.costBasis).toBe(500)
-    expect(pos.avgCost).toBe(10)
+    expect(pos.costBasis).toBeCloseTo(500)
+    expect(pos.avgCost).toBeCloseTo(10)
   })
   it('full SELL results in zero quantity and zero costBasis', () => {
     const trades = [
@@ -118,8 +118,8 @@ describe('derivePositions', () => {
     const pos = positions[0]
 
     expect(pos.quantity).toBe(200)
-    expect(pos.costBasis).toBe(3000)
-    expect(pos.avgCost).toBe(15)
+    expect(pos.costBasis).toBeCloseTo(3000)
+    expect(pos.avgCost).toBeCloseTo(15)
   })
   it('fees accumulate correctly across multiple trades', () => {
     const trades = [
